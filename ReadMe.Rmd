@@ -1,0 +1,177 @@
+# SSM Health Conference Attendance Tracking App
+
+A Shiny application for tracking attendance and responses to educational conference questions.
+
+## Features
+
+- **Access Code Authentication**: Participants enter their unique access code to authenticate
+- **Participant Identification**: Displays participant name after successful authentication
+- **Rotation Selection**: Searchable dropdown for current rotation assignment
+- **Question Response**: Multiple choice question (A, B, C, D, E) submission
+- **REDCap Integration**: Automatically submits responses to REDCap database
+- **Mobile Responsive**: Optimized for use on phones and tablets
+- **SSM Health Branding**: Professional styling matching organizational colors
+
+## Setup Instructions
+
+### 1. Environment Setup
+
+```r
+# Run the renv setup script
+source("setup_renv.R")
+```
+
+### 2. REDCap Configuration
+
+1. Update `config.yml` with your REDCap API token:
+   ```yaml
+   default:
+     conf_token: "YOUR_ACTUAL_REDCAP_TOKEN"
+   ```
+
+2. Ensure your REDCap project has:
+   - **resident_data** form with fields:
+     - `record_id`
+     - `name` (or `first_name` and `last_name`)
+     - `access_code`
+   - **questions** form with fields:
+     - `q_date` (date field)
+     - `q_rotation` (dropdown with rotation values)
+     - `q_answer` (dropdown: A, B, C, D, E)
+
+### 3. Directory Structure
+
+Create the following structure:
+```
+conference-app/
+├── app.R
+├── global.R
+├── ui.R
+├── server.R
+├── config.yml
+├── setup_renv.R
+├── README.md
+├── renv/
+├── www/
+│   └── conference-app.css
+└── R/
+    └── helpers.R (if needed)
+```
+
+### 4. Install imslu Package
+
+Update the GitHub path in `global.R`:
+```r
+remotes::install_github("your-organization/imslu")
+```
+
+### 5. Run the Application
+
+```r
+# Run locally
+shiny::runApp()
+
+# Or run specific file
+shiny::runApp("app.R")
+```
+
+## Deployment
+
+### Local Development
+- Use the config.yml file with your development token
+- Set `debug: true` in development environment
+
+### Production Deployment
+- Set environment variable: `CONF_TOKEN=your_production_token`
+- Ensure `debug: false` in production config
+
+### Hosting Options
+- **shinyapps.io**: Upload using `rsconnect` package
+- **RStudio Connect**: Deploy through RStudio IDE
+- **Custom Server**: Host on your own Shiny Server
+
+## Usage Workflow
+
+1. **Participant Access**: Enter unique access code
+2. **Authentication**: System validates code against REDCap database
+3. **Rotation Selection**: Search and select current rotation
+4. **Question Response**: Select answer (A, B, C, D, or E)
+5. **Submission**: Response automatically saved to REDCap
+6. **Confirmation**: Success message displayed
+
+## REDCap Data Structure
+
+### resident_data Form
+- `record_id`: Unique identifier
+- `access_code`: Unique access code for each participant
+- `name`: Full name (or use `first_name` + `last_name`)
+
+### questions Form (Repeating Instrument)
+- `q_date`: Date of response (auto-populated)
+- `q_rotation`: Selected rotation (1-17, see rotation_choices in global.R)
+- `q_answer`: Selected answer (A, B, C, D, E)
+
+## Customization
+
+### Rotation Options
+Update `rotation_choices` in `global.R` to modify available rotations:
+```r
+rotation_choices <- c(
+  "Custom Rotation" = "18",
+  # ... existing rotations
+)
+```
+
+### Styling
+Modify `www/conference-app.css` to adjust:
+- Color scheme (CSS variables at top of file)
+- Layout and spacing
+- Mobile responsiveness
+- Branding elements
+
+### Question Format
+Currently supports multiple choice (A-E). To modify:
+1. Update radioButtons choices in `ui.R`
+2. Adjust REDCap field options accordingly
+
+## Troubleshooting
+
+### Common Issues
+
+1. **REDCap Connection Failed**
+   - Verify API token in config.yml
+   - Check REDCap URL is correct
+   - Ensure API permissions are enabled
+
+2. **Access Code Not Found**
+   - Verify access_code field exists in resident_data
+   - Check for exact match (case-sensitive)
+   - Ensure data has been properly imported
+
+3. **Submission Failed**
+   - Check REDCap project permissions
+   - Verify questions form is set as repeating instrument
+   - Review field names match exactly
+
+4. **Mobile Display Issues**
+   - Ensure CSS file is in www/ directory
+   - Check viewport meta tag is included
+   - Test responsive breakpoints
+
+### Debug Mode
+Enable debug mode in config.yml for detailed logging:
+```yaml
+development:
+  debug: true
+```
+
+## Support
+
+For technical support or questions:
+- Review REDCap API documentation
+- Check Shiny documentation for UI/server issues
+- Verify mobile responsiveness with browser dev tools
+
+## License
+
+Internal use for SSM Health educational conferences.

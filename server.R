@@ -72,7 +72,7 @@ server <- function(input, output, session) {
   outputOptions(output, "show_error", suspendWhenHidden = FALSE)
   
   # ============================================================================
-  # TIME RESTRICTION OUTPUTS
+  # TIME RESTRICTION OUTPUTS - FIXED TIMEZONE HANDLING
   # ============================================================================
   
   output$time_restriction_message <- renderText({
@@ -86,9 +86,19 @@ server <- function(input, output, session) {
     # Update every 30 seconds
     invalidateLater(30000, session)
     
+    # Get current time and convert to Chicago timezone
     current_time <- Sys.time()
-    stl_time <- as.POSIXct(format(current_time), tz = CONFERENCE_TIMEZONE)
-    return(format(stl_time, "%I:%M %p %Z on %A, %B %d, %Y"))
+    chicago_time <- lubridate::with_tz(current_time, CONFERENCE_TIMEZONE)
+    
+    # Format in Chicago timezone
+    formatted_time <- format(chicago_time, "%I:%M %p %Z on %A, %B %d, %Y")
+    
+    # Debug output
+    cat("Display time - UTC:", format(current_time, "%Y-%m-%d %H:%M:%S %Z"), "\n")
+    cat("Display time - Chicago:", format(chicago_time, "%Y-%m-%d %H:%M:%S %Z"), "\n")
+    cat("Formatted for display:", formatted_time, "\n")
+    
+    return(formatted_time)
   })
   
   # ============================================================================
@@ -239,5 +249,4 @@ server <- function(input, output, session) {
       values$error_message <- NULL
     }
   })
-  
 }

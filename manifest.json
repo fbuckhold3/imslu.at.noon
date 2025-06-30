@@ -722,11 +722,11 @@
         "Package": "curl",
         "Type": "Package",
         "Title": "A Modern and Flexible Web Client for R",
-        "Version": "6.2.2",
+        "Version": "6.4.0",
         "Authors@R": "c(\n    person(\"Jeroen\", \"Ooms\", role = c(\"aut\", \"cre\"), email = \"jeroenooms@gmail.com\",\n      comment = c(ORCID = \"0000-0002-4035-0289\")),\n    person(\"Hadley\", \"Wickham\", role = \"ctb\"),\n    person(\"Posit Software, PBC\", role = \"cph\"))",
         "Description": "Bindings to 'libcurl' <https://curl.se/libcurl/> for performing fully\n    configurable HTTP/FTP requests where responses can be processed in memory, on\n    disk, or streaming via the callback or connection interfaces. Some knowledge\n    of 'libcurl' is recommended; for a more-user-friendly web client see the \n    'httr2' package which builds on this package with http specific tools and logic.",
         "License": "MIT + file LICENSE",
-        "SystemRequirements": "libcurl (>= 7.62): libcurl-devel (rpm) or\nlibcurl4-openssl-dev (deb)",
+        "SystemRequirements": "libcurl (>= 7.73): libcurl-devel (rpm) or\nlibcurl4-openssl-dev (deb)",
         "URL": "https://jeroen.r-universe.dev/curl",
         "BugReports": "https://github.com/jeroen/curl/issues",
         "Suggests": "spelling, testthat (>= 1.0.0), knitr, jsonlite, later,\nrmarkdown, httpuv (>= 1.4.4), webutils",
@@ -736,20 +736,12 @@
         "Encoding": "UTF-8",
         "Language": "en-US",
         "NeedsCompilation": "yes",
-        "Packaged": "2025-03-23 13:24:53 UTC; jeroen",
-        "Author": "Jeroen Ooms [aut, cre] (<https://orcid.org/0000-0002-4035-0289>),\n  Hadley Wickham [ctb],\n  Posit Software, PBC [cph]",
+        "Packaged": "2025-06-21 19:18:13 UTC; jeroen",
+        "Author": "Jeroen Ooms [aut, cre] (ORCID: <https://orcid.org/0000-0002-4035-0289>),\n  Hadley Wickham [ctb],\n  Posit Software, PBC [cph]",
         "Maintainer": "Jeroen Ooms <jeroenooms@gmail.com>",
-        "Repository": "CRAN",
-        "Date/Publication": "2025-03-24 07:00:02 UTC",
-        "Built": "R 4.3.3; aarch64-apple-darwin20; 2025-03-24 08:41:30 UTC; unix",
-        "Archs": "curl.so.dSYM",
-        "RemoteType": "standard",
-        "RemotePkgRef": "curl",
-        "RemoteRef": "curl",
-        "RemoteRepos": "https://cloud.r-project.org",
-        "RemoteReposName": "CRAN",
-        "RemotePkgPlatform": "aarch64-apple-darwin20",
-        "RemoteSha": "6.2.2"
+        "Repository": "RSPM",
+        "Date/Publication": "2025-06-22 10:40:02 UTC",
+        "Built": "R 4.3.0; x86_64-pc-linux-gnu; 2025-06-23 17:34:49 UTC; unix"
       }
     },
     "desc": {
@@ -1512,7 +1504,7 @@
         "Built": "R 4.3.0; ; 2025-03-27 04:46:38 UTC; unix"
       }
     },
-    "imres": {
+     "imres": {
       "Source": "github",
       "Repository": null,
       "description": {
@@ -3638,22 +3630,22 @@
   },
   "files": {
     "app.R": {
-      "checksum": "ba71a5d2127defea1a186dd6996580a1"
+      "checksum": "2e16a0198475921c81f44313ed2024c1"
     },
     "global.R": {
-      "checksum": "c717bd408d5f5efa02e32afac8edb8d9"
+      "checksum": "708735b28d2d3d29d951664efa157a19"
     },
     "ReadMe.Rmd": {
       "checksum": "950057ccc4feb9f519d8f30fd113d11f"
     },
     "server.R": {
-      "checksum": "08cea8288f3eff4f4bce34455ad462c6"
+      "checksum": "65608e24481b5112ad61381ff361246e"
     },
     "ui.R": {
-      "checksum": "c5348cc59ef3d244c47841d14d9fd155"
+      "checksum": "6f2db7e8f42ba740cb0ba931f0291ca6"
     },
     "www/conference-app.css": {
-      "checksum": "927a0e5280954aa3a436d61a43e7d73a"
+      "checksum": "106dd2688054ccc85db35c34dea86a67"
     }
   },
   "users": null

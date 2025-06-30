@@ -21,10 +21,6 @@ if (!require(imres)) {
   library(imres)
 }
 
-# ============================================================================
-# TIME WINDOW CONFIGURATION
-# ============================================================================
-
 # Conference submission time window (St. Louis, MO timezone)
 CONFERENCE_TIMEZONE <- "America/Chicago"
 CONFERENCE_START_TIME <- "11:55"  # 24-hour format HH:MM
@@ -34,9 +30,15 @@ CONFERENCE_DAYS <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
 # Function to check if current time is within conference window
 is_conference_time <- function() {
   tryCatch({
-    # Get current time in St. Louis timezone
+    # Get current time in Chicago timezone (should now be correct)
     current_time <- Sys.time()
-    stl_time <- as.POSIXct(format(current_time), tz = CONFERENCE_TIMEZONE)
+    
+    # Force timezone conversion to ensure it's in Chicago time
+    stl_time <- lubridate::with_tz(current_time, CONFERENCE_TIMEZONE)
+    
+    # Debug: Print current time information
+    cat("Current system time:", format(current_time, "%Y-%m-%d %H:%M:%S %Z"), "\n")
+    cat("Chicago time:", format(stl_time, "%Y-%m-%d %H:%M:%S %Z"), "\n")
     
     # Get current day of week
     current_day <- weekdays(stl_time)

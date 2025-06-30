@@ -30,7 +30,7 @@ ui <- fluidPage(
           class = "header-info text-end",
           tags$small(
             class = "text-muted",
-            format(Sys.Date(), "%B %d, %Y")
+            format(lubridate::with_tz(Sys.time(), "America/Chicago"), "%B %d, %Y")
           )
         )
       )
@@ -145,7 +145,7 @@ ui <- fluidPage(
               class = "conference-date text-end",
               div(
                 class = "fw-bold text-primary",
-                format(Sys.Date(), "%B %d, %Y")
+                format(lubridate::with_tz(Sys.time(), "America/Chicago"), "%B %d, %Y")
               ),
               div(
                 class = "text-muted small",

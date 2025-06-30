@@ -9,14 +9,47 @@ server <- function(input, output, session) {
   values <- reactiveValues(
     current_step = "access",
     participant = NULL,
-    selected_rotation = NULL,
     error_message = NULL,
-    filtered_rotations = NULL
+    time_check = NULL
   )
+  
+  # ============================================================================
+  # TIME WINDOW CHECK
+  # ============================================================================
+  
+  # Check time window on app load and periodically
+  observe({
+    values$time_check <- is_conference_time()
+    
+    # If outside time window, show restriction message
+    if (!values$time_check$allowed) {
+      values$current_step <- "time_restricted"
+    }
+  })
+  
+  # Periodic time check (every 30 seconds)
+  observe({
+    invalidateLater(30000, session)  # 30 seconds
+    values$time_check <- is_conference_time()
+    
+    # If time window opens, allow access
+    if (values$time_check$allowed && values$current_step == "time_restricted") {
+      values$current_step <- "access"
+    }
+    # If time window closes, restrict access
+    if (!values$time_check$allowed && values$current_step != "time_restricted") {
+      values$current_step <- "time_restricted"
+    }
+  })
   
   # ============================================================================
   # STEP VISIBILITY CONTROLS
   # ============================================================================
+  
+  output$show_time_restriction <- reactive({
+    values$current_step == "time_restricted"
+  })
+  outputOptions(output, "show_time_restriction", suspendWhenHidden = FALSE)
   
   output$show_access_step <- reactive({
     values$current_step == "access"
@@ -33,20 +66,30 @@ server <- function(input, output, session) {
   })
   outputOptions(output, "show_success_step", suspendWhenHidden = FALSE)
   
-  output$show_selected_rotation <- reactive({
-    !is.null(input$q_rotation) && input$q_rotation != ""
-  })
-  outputOptions(output, "show_selected_rotation", suspendWhenHidden = FALSE)
-  
-  output$show_question <- reactive({
-    !is.null(input$q_rotation) && input$q_rotation != ""
-  })
-  outputOptions(output, "show_question", suspendWhenHidden = FALSE)
-  
   output$show_error <- reactive({
     !is.null(values$error_message)
   })
   outputOptions(output, "show_error", suspendWhenHidden = FALSE)
+  
+  # ============================================================================
+  # TIME RESTRICTION OUTPUTS
+  # ============================================================================
+  
+  output$time_restriction_message <- renderText({
+    if (!is.null(values$time_check)) {
+      return(values$time_check$message)
+    }
+    return("")
+  })
+  
+  output$current_time_display <- renderText({
+    # Update every 30 seconds
+    invalidateLater(30000, session)
+    
+    current_time <- Sys.time()
+    stl_time <- as.POSIXct(format(current_time), tz = CONFERENCE_TIMEZONE)
+    return(format(stl_time, "%I:%M %p %Z on %A, %B %d, %Y"))
+  })
   
   # ============================================================================
   # ACCESS CODE HANDLING
@@ -54,6 +97,13 @@ server <- function(input, output, session) {
   
   observeEvent(input$submit_access, {
     req(input$access_code)
+    
+    # First check if we're in the time window
+    time_check <- is_conference_time()
+    if (!time_check$allowed) {
+      values$error_message <- "Conference submission window is currently closed. Please try again during the designated time."
+      return()
+    }
     
     values$error_message <- NULL
     
@@ -128,6 +178,13 @@ server <- function(input, output, session) {
     req(values$participant)
     req(input$q_rotation)
     req(input$q_answer)
+    
+    # Double-check time window before submission
+    time_check <- is_conference_time()
+    if (!time_check$allowed) {
+      values$error_message <- "Conference submission window has closed. Your response could not be submitted."
+      return()
+    }
     
     values$error_message <- NULL
     

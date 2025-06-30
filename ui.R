@@ -1,3 +1,5 @@
+# ui.R - Conference Attendance Tracking App
+
 ui <- fluidPage(
   theme = bs_theme(
     version = 5,
@@ -38,6 +40,34 @@ ui <- fluidPage(
   # Main Content
   div(
     class = "container mt-4",
+    
+    # Time Restriction Message
+    conditionalPanel(
+      condition = "output.show_time_restriction",
+      div(
+        class = "ssm-card mb-4",
+        div(
+          class = "time-restriction-content text-center py-5",
+          div(
+            class = "restriction-icon mb-4",
+            tags$i(class = "fas fa-clock", style = "font-size: 4rem; color: var(--ssm-warning-orange);")
+          ),
+          h3(
+            class = "text-warning mb-3",
+            "Conference Submission Window Closed"
+          ),
+          div(
+            class = "restriction-message mb-4",
+            textOutput("time_restriction_message")
+          ),
+          div(
+            class = "current-time-display",
+            tags$strong("Current Time: "),
+            textOutput("current_time_display", inline = TRUE)
+          )
+        )
+      )
+    ),
     
     # Access Code Step
     conditionalPanel(

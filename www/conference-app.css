@@ -110,6 +110,39 @@ body {
   box-shadow: 0 0 0 4px rgba(0, 102, 161, 0.1);
 }
 
+/* Time Restriction Styling */
+.time-restriction-content {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 1px solid var(--ssm-warning-orange);
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+.restriction-icon {
+  opacity: 0.8;
+}
+
+.text-warning {
+  color: var(--ssm-warning-orange) !important;
+}
+
+.restriction-message {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--ssm-text-primary);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.current-time-display {
+  font-size: 1rem;
+  color: var(--ssm-text-secondary);
+  background: rgba(255, 255, 255, 0.7);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  display: inline-block;
+}
+
 /* Participant Card */
 .participant-card {
   background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);

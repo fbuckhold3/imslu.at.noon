@@ -22,6 +22,74 @@ if (!require(imres)) {
 }
 
 # ============================================================================
+# TIME WINDOW CONFIGURATION
+# ============================================================================
+
+# Conference submission time window (St. Louis, MO timezone)
+CONFERENCE_TIMEZONE <- "America/Chicago"
+CONFERENCE_START_TIME <- "11:55"  # 24-hour format HH:MM
+CONFERENCE_END_TIME <- "12:10"    # 24-hour format HH:MM
+CONFERENCE_DAYS <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+
+# Function to check if current time is within conference window
+is_conference_time <- function() {
+  tryCatch({
+    # Get current time in St. Louis timezone
+    current_time <- Sys.time()
+    stl_time <- as.POSIXct(format(current_time), tz = CONFERENCE_TIMEZONE)
+    
+    # Get current day of week
+    current_day <- weekdays(stl_time)
+    
+    # Check if it's a conference day
+    if (!current_day %in% CONFERENCE_DAYS) {
+      return(list(
+        allowed = FALSE,
+        message = paste("Conference submissions are only available Monday through Friday.",
+                        "Today is", current_day, "- please try again on a weekday.")
+      ))
+    }
+    
+    # Get current time as HH:MM
+    current_hhmm <- format(stl_time, "%H:%M")
+    
+    # Check if current time is within window
+    if (current_hhmm >= CONFERENCE_START_TIME && current_hhmm <= CONFERENCE_END_TIME) {
+      return(list(
+        allowed = TRUE,
+        message = paste("Conference submission window is open until", CONFERENCE_END_TIME, "CT")
+      ))
+    } else {
+      # Calculate next available time
+      if (current_hhmm < CONFERENCE_START_TIME) {
+        next_time <- paste("today at", CONFERENCE_START_TIME, "AM CT")
+      } else {
+        # After conference time - next opportunity is tomorrow (or Monday if Friday)
+        if (current_day == "Friday") {
+          next_time <- "Monday at 11:55 AM CT"
+        } else {
+          next_time <- "tomorrow at 11:55 AM CT"
+        }
+      }
+      
+      return(list(
+        allowed = FALSE,
+        message = paste("Conference submissions are only available Monday-Friday from 11:55 AM to 12:10 PM CT.",
+                        "Current time:", format(stl_time, "%I:%M %p %Z on %A, %B %d"),
+                        "- Next submission window opens", next_time)
+      ))
+    }
+    
+  }, error = function(e) {
+    cat("Error checking conference time:", e$message, "\n")
+    return(list(
+      allowed = FALSE,
+      message = "Unable to verify conference time window. Please try again later."
+    ))
+  })
+}
+
+# ============================================================================
 # ENVIRONMENT SETUP
 # ============================================================================
 
@@ -63,6 +131,9 @@ answer_choices <- c(
 # Alternative common patterns - uncomment the correct one:
 # answer_choices <- c("A" = "A", "B" = "B", "C" = "C", "D" = "D", "E" = "E")  # If letters are stored directly
 # answer_choices <- c("A" = "0", "B" = "1", "C" = "2", "D" = "3", "E" = "4")  # If zero-indexed numbers
+# ============================================================================
+# ROTATION OPTIONS
+# ============================================================================
 rotation_choices <- c(
   "Red" = "1",
   "Green" = "2", 
@@ -82,6 +153,10 @@ rotation_choices <- c(
   "VA D" = "16",
   "VA Clinics or Consults" = "17"
 )
+
+# Debug: Print rotation choices to console
+cat("Rotation choices loaded:\n")
+print(rotation_choices)
 
 # ============================================================================
 # DATA FUNCTIONS

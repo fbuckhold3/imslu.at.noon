@@ -1504,7 +1504,7 @@
         "Built": "R 4.3.0; ; 2025-03-27 04:46:38 UTC; unix"
       }
     },
-     "imres": {
+    "imres": {
       "Source": "github",
       "Repository": null,
       "description": {
@@ -1516,22 +1516,22 @@
         "Maintainer": "Fred Buckhold <fred.buckhold@health.slu.edu>",
         "Description": "This serves as a support package for various shiny apps intending for a residency data management platform. This is initially to be used for the local residency with a conception towards scale. Many functions will be used in various dashboards but in this package form to reduce code complexity with uploading into shiny apps. ",
         "License": "MIT",
-        "Imports": "bslib,\ndevtools,\ndplyr,\nDT,\nhttr,\njsonlite,\nlubridate,\npkgdown,\nhtmltools,\nreactable,\nreadr,\nREDCapR,\nroxygen2,\nshiny,\nstringr,\ntestthat,\ntidyr,\nusethis",
+        "Imports": "bslib, devtools, dplyr, DT, httr, jsonlite, lubridate,\npkgdown, htmltools, reactable, readr, REDCapR, roxygen2, shiny,\nstringr, testthat, tidyr, usethis",
         "Encoding": "UTF-8",
-        "LazyData": "true",
         "RoxygenNote": "7.3.2",
-        "Built": "R 4.3.3; ; 2025-04-30 20:18:52 UTC; unix",
         "RemoteType": "github",
         "RemoteHost": "api.github.com",
-        "RemoteUsername": "fbuckhold3",
         "RemoteRepo": "imres",
-        "RemoteRef": "main",
+        "RemoteUsername": "fbuckhold3",
+        "RemoteRef": "HEAD",
         "RemoteSha": "722178849552d7409aeb43652152db1b72540c39",
-        "GithubHost": "api.github.com",
         "GithubRepo": "imres",
         "GithubUsername": "fbuckhold3",
-        "GithubRef": "main",
-        "GithubSHA1": "722178849552d7409aeb43652152db1b72540c39"
+        "GithubRef": "HEAD",
+        "GithubSHA1": "722178849552d7409aeb43652152db1b72540c39",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-06-29 18:52:47 UTC; fredbuckhold",
+        "Built": "R 4.3.3; ; 2025-06-29 18:52:47 UTC; unix"
       }
     },
     "ini": {
@@ -2806,6 +2806,40 @@
         "Built": "R 4.3.0; ; 2025-06-25 04:37:49 UTC; unix"
       }
     },
+    "shinyjs": {
+      "Source": "CRAN",
+      "Repository": "https://packagemanager.posit.co/cran/latest",
+      "description": {
+        "Package": "shinyjs",
+        "Title": "Easily Improve the User Experience of Your Shiny Apps in Seconds",
+        "Version": "2.1.0",
+        "Authors@R": "person(\"Dean\", \"Attali\", \n    email = \"daattali@gmail.com\",\n    role = c(\"aut\", \"cre\"),\n    comment= c(ORCID=\"0000-0002-5645-3493\"))",
+        "Description": "Perform common useful JavaScript operations in Shiny apps that will\n    greatly improve your apps without having to know any JavaScript. Examples\n    include: hiding an element, disabling an input, resetting an input back to\n    its original value, delaying code execution by a few seconds, and many more\n    useful functions for both the end user and the developer. 'shinyjs' can also\n    be used to easily call your own custom JavaScript functions from R.",
+        "URL": "https://deanattali.com/shinyjs/",
+        "BugReports": "https://github.com/daattali/shinyjs/issues",
+        "Depends": "R (>= 3.1.0)",
+        "Imports": "digest (>= 0.6.8), jsonlite, shiny (>= 1.0.0)",
+        "Suggests": "htmltools (>= 0.2.9), knitr (>= 1.7), rmarkdown, shinyAce,\nshinydisconnect, testthat (>= 0.9.1)",
+        "License": "MIT + file LICENSE",
+        "VignetteBuilder": "knitr",
+        "RoxygenNote": "7.1.1",
+        "Encoding": "UTF-8",
+        "NeedsCompilation": "no",
+        "Packaged": "2021-12-21 11:32:22 UTC; Dean-X1C",
+        "Author": "Dean Attali [aut, cre] (<https://orcid.org/0000-0002-5645-3493>)",
+        "Maintainer": "Dean Attali <daattali@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2021-12-23 10:10:02 UTC",
+        "Built": "R 4.3.0; ; 2023-04-11 04:49:20 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "shinyjs",
+        "RemoteRef": "shinyjs",
+        "RemoteRepos": "https://cloud.r-project.org",
+        "RemoteReposName": "CRAN",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "2.1.0"
+      }
+    },
     "sourcetools": {
       "Source": "CRAN",
       "Repository": "https://packagemanager.posit.co/cran/latest",
@@ -3633,19 +3667,19 @@
       "checksum": "2e16a0198475921c81f44313ed2024c1"
     },
     "global.R": {
-      "checksum": "708735b28d2d3d29d951664efa157a19"
+      "checksum": "facbedb518c8feae1fcea13da8609384"
     },
     "ReadMe.Rmd": {
       "checksum": "950057ccc4feb9f519d8f30fd113d11f"
     },
     "server.R": {
-      "checksum": "65608e24481b5112ad61381ff361246e"
+      "checksum": "9fe042d0b3b7a60da76f211596b3a1aa"
     },
     "ui.R": {
-      "checksum": "6f2db7e8f42ba740cb0ba931f0291ca6"
+      "checksum": "50ab0dd94e0a3c6942cbeef0835c5984"
     },
     "www/conference-app.css": {
-      "checksum": "106dd2688054ccc85db35c34dea86a67"
+      "checksum": "98d520ee724e9b56a3fbacd76b5aca2e"
     }
   },
   "users": null

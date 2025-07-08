@@ -1,6 +1,13 @@
 server <- function(input, output, session) {
   
   # ============================================================================
+  # CRITICAL VARIABLES (Define here for Posit Connect Cloud compatibility)
+  # ============================================================================
+  
+  TESTING_MODE <- TRUE  # Set to FALSE for production
+  CONFERENCE_TIMEZONE <- "America/Chicago"
+  
+  # ============================================================================
   # REACTIVE VALUES
   # ============================================================================
   
@@ -17,8 +24,8 @@ server <- function(input, output, session) {
   # ============================================================================
   
   is_conference_time <- function() {
-    # Override for testing
-    if (exists("TESTING_MODE") && TESTING_MODE) {
+    # Override for testing (variables now defined locally)
+    if (TESTING_MODE) {
       return(list(
         allowed = TRUE,
         message = "Testing mode - time restrictions bypassed"
@@ -29,10 +36,7 @@ server <- function(input, output, session) {
     tryCatch({
       # Your actual time window logic goes here
       current_time <- Sys.time()
-      
-      # Check if CONFERENCE_TIMEZONE is defined, use default if not
-      timezone <- if(exists("CONFERENCE_TIMEZONE")) CONFERENCE_TIMEZONE else "America/Chicago"
-      chicago_time <- lubridate::with_tz(current_time, timezone)
+      chicago_time <- lubridate::with_tz(current_time, CONFERENCE_TIMEZONE)
       
       # Example time window (replace with your actual logic):
       # Conference runs Monday-Friday, 12:00 PM - 1:00 PM Chicago time
@@ -93,35 +97,19 @@ server <- function(input, output, session) {
   # TIME WINDOW OBSERVERS
   # ============================================================================
   
-  # Check time window on app load and periodically
+  # Check time window ONCE on app load only
   observe({
     values$time_check <- is_conference_time()
     
-    # If outside time window, show restriction message
+    # Since TESTING_MODE = TRUE, this should always allow access
     if (!values$time_check$allowed) {
       values$current_step <- "time_restricted"
+    } else {
+      values$current_step <- "access"
     }
   })
   
-  # Periodic time check (every 5 minutes instead of 30 seconds to reduce load)
-  observe({
-    invalidateLater(300000, session)  # 5 minutes instead of 30 seconds
-    
-    tryCatch({
-      values$time_check <- is_conference_time()
-      
-      # If time window opens, allow access
-      if (values$time_check$allowed && values$current_step == "time_restricted") {
-        values$current_step <- "access"
-      }
-      # If time window closes, restrict access
-      if (!values$time_check$allowed && values$current_step != "time_restricted") {
-        values$current_step <- "time_restricted"
-      }
-    }, error = function(e) {
-      cat("Error in periodic time check:", e$message, "\n")
-    })
-  })
+  # PERIODIC TIME CHECK COMPLETELY DISABLED FOR POSIT CONNECT CLOUD STABILITY
   
   # ============================================================================
   # STEP VISIBILITY CONTROLS

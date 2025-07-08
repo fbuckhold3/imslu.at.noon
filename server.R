@@ -1,7 +1,3 @@
-# server.R - Conference Attendance Tracking App
-
-library(shinyjs)
-
 server <- function(input, output, session) {
   
   # ============================================================================
@@ -29,29 +25,41 @@ server <- function(input, output, session) {
       ))
     }
     
-    # Your actual time window logic goes here
-    # For now, this is a placeholder - replace with your actual time checking logic
-    current_time <- Sys.time()
-    chicago_time <- lubridate::with_tz(current_time, CONFERENCE_TIMEZONE)
-    
-    # Example time window (replace with your actual logic):
-    # Conference runs Monday-Friday, 12:00 PM - 1:00 PM Chicago time
-    hour <- lubridate::hour(chicago_time)
-    weekday <- lubridate::wday(chicago_time, week_start = 1) # Monday = 1
-    
-    if (weekday >= 1 && weekday <= 5 && hour >= 12 && hour < 13) {
+    # Add error handling for production
+    tryCatch({
+      # Your actual time window logic goes here
+      current_time <- Sys.time()
+      
+      # Check if CONFERENCE_TIMEZONE is defined, use default if not
+      timezone <- if(exists("CONFERENCE_TIMEZONE")) CONFERENCE_TIMEZONE else "America/Chicago"
+      chicago_time <- lubridate::with_tz(current_time, timezone)
+      
+      # Example time window (replace with your actual logic):
+      # Conference runs Monday-Friday, 12:00 PM - 1:00 PM Chicago time
+      hour <- lubridate::hour(chicago_time)
+      weekday <- lubridate::wday(chicago_time, week_start = 1) # Monday = 1
+      
+      if (weekday >= 1 && weekday <= 5 && hour >= 12 && hour < 13) {
+        return(list(
+          allowed = TRUE,
+          message = "Conference submission window is open."
+        ))
+      } else {
+        return(list(
+          allowed = FALSE,
+          message = paste0("Conference submission is closed. ",
+                           "Submissions are accepted Monday-Friday, 12:00 PM - 1:00 PM Central Time. ",
+                           "Please return during the designated time window.")
+        ))
+      }
+    }, error = function(e) {
+      # If there's an error, default to allowing access and log the error
+      cat("Error in is_conference_time():", e$message, "\n")
       return(list(
         allowed = TRUE,
-        message = "Conference submission window is open."
+        message = "Time check unavailable - access granted"
       ))
-    } else {
-      return(list(
-        allowed = FALSE,
-        message = paste0("Conference submission is closed. ",
-                         "Submissions are accepted Monday-Friday, 12:00 PM - 1:00 PM Central Time. ",
-                         "Please return during the designated time window.")
-      ))
-    }
+    })
   }
   
   # ============================================================================
@@ -95,19 +103,24 @@ server <- function(input, output, session) {
     }
   })
   
-  # Periodic time check (every 30 seconds)
+  # Periodic time check (every 5 minutes instead of 30 seconds to reduce load)
   observe({
-    invalidateLater(30000, session)  # 30 seconds
-    values$time_check <- is_conference_time()
+    invalidateLater(300000, session)  # 5 minutes instead of 30 seconds
     
-    # If time window opens, allow access
-    if (values$time_check$allowed && values$current_step == "time_restricted") {
-      values$current_step <- "access"
-    }
-    # If time window closes, restrict access
-    if (!values$time_check$allowed && values$current_step != "time_restricted") {
-      values$current_step <- "time_restricted"
-    }
+    tryCatch({
+      values$time_check <- is_conference_time()
+      
+      # If time window opens, allow access
+      if (values$time_check$allowed && values$current_step == "time_restricted") {
+        values$current_step <- "access"
+      }
+      # If time window closes, restrict access
+      if (!values$time_check$allowed && values$current_step != "time_restricted") {
+        values$current_step <- "time_restricted"
+      }
+    }, error = function(e) {
+      cat("Error in periodic time check:", e$message, "\n")
+    })
   })
   
   # ============================================================================

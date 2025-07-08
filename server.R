@@ -1,11 +1,6 @@
+# server.R - Conference Attendance Tracking App
+
 server <- function(input, output, session) {
-  
-  # ============================================================================
-  # CRITICAL VARIABLES (Define here for Posit Connect Cloud compatibility)
-  # ============================================================================
-  
-  TESTING_MODE <- TRUE  # Set to FALSE for production
-  CONFERENCE_TIMEZONE <- "America/Chicago"
   
   # ============================================================================
   # REACTIVE VALUES
@@ -15,101 +10,53 @@ server <- function(input, output, session) {
     current_step = "access",
     participant = NULL,
     error_message = NULL,
-    time_check = NULL,
-    last_cleaned_code = ""
+    time_check = NULL
   )
   
   # ============================================================================
-  # TIME WINDOW CHECK FUNCTION
+  # MOBILE COMPATIBILITY - HTTPS REDIRECT ONLY
   # ============================================================================
   
-  is_conference_time <- function() {
-    # Override for testing (variables now defined locally)
-    if (TESTING_MODE) {
-      return(list(
-        allowed = TRUE,
-        message = "Testing mode - time restrictions bypassed"
-      ))
-    }
-    
-    # Add error handling for production
-    tryCatch({
-      # Your actual time window logic goes here
-      current_time <- Sys.time()
-      chicago_time <- lubridate::with_tz(current_time, CONFERENCE_TIMEZONE)
-      
-      # Example time window (replace with your actual logic):
-      # Conference runs Monday-Friday, 12:00 PM - 1:00 PM Chicago time
-      hour <- lubridate::hour(chicago_time)
-      weekday <- lubridate::wday(chicago_time, week_start = 1) # Monday = 1
-      
-      if (weekday >= 1 && weekday <= 5 && hour >= 12 && hour < 13) {
-        return(list(
-          allowed = TRUE,
-          message = "Conference submission window is open."
-        ))
-      } else {
-        return(list(
-          allowed = FALSE,
-          message = paste0("Conference submission is closed. ",
-                           "Submissions are accepted Monday-Friday, 12:00 PM - 1:00 PM Central Time. ",
-                           "Please return during the designated time window.")
-        ))
-      }
-    }, error = function(e) {
-      # If there's an error, default to allowing access and log the error
-      cat("Error in is_conference_time():", e$message, "\n")
-      return(list(
-        allowed = TRUE,
-        message = "Time check unavailable - access granted"
-      ))
-    })
-  }
-  
-  # ============================================================================
-  # MOBILE COMPATIBILITY & SECURITY FIXES
-  # ============================================================================
-  
-  # Force HTTPS redirect for mobile security
+  # Simple HTTPS redirect for mobile security (non-disruptive)
   observe({
-    if (Sys.getenv("SHINY_PORT") != "" && 
-        !is.null(session$clientData$url_protocol) &&
-        !grepl("^https://", session$clientData$url_protocol)) {
+    if (!is.null(session$clientData$url_protocol) && 
+        session$clientData$url_protocol == "http:" &&
+        !grepl("localhost|127.0.0.1", session$clientData$url_hostname)) {
       
-      # Redirect to HTTPS version
       url_https <- paste0("https://", session$clientData$url_hostname, 
                           session$clientData$url_pathname)
-      
       runjs(paste0("window.location.replace('", url_https, "');"))
     }
   })
   
-  # Add security headers for mobile compatibility
-  session$onSessionEnded(function() {
-    session$sendCustomMessage(type = "add_headers", message = list(
-      "Strict-Transport-Security" = "max-age=31536000; includeSubDomains",
-      "X-Frame-Options" = "SAMEORIGIN",
-      "X-Content-Type-Options" = "nosniff"
-    ))
-  })
-  
   # ============================================================================
-  # TIME WINDOW OBSERVERS
+  # TIME WINDOW CHECK
   # ============================================================================
   
-  # Check time window ONCE on app load only
+  # Check time window on app load and periodically
   observe({
     values$time_check <- is_conference_time()
     
-    # Since TESTING_MODE = TRUE, this should always allow access
+    # If outside time window, show restriction message
     if (!values$time_check$allowed) {
       values$current_step <- "time_restricted"
-    } else {
-      values$current_step <- "access"
     }
   })
   
-  # PERIODIC TIME CHECK COMPLETELY DISABLED FOR POSIT CONNECT CLOUD STABILITY
+  # Periodic time check (every 30 seconds)
+  observe({
+    invalidateLater(30000, session)  # 30 seconds
+    values$time_check <- is_conference_time()
+    
+    # If time window opens, allow access
+    if (values$time_check$allowed && values$current_step == "time_restricted") {
+      values$current_step <- "access"
+    }
+    # If time window closes, restrict access
+    if (!values$time_check$allowed && values$current_step != "time_restricted") {
+      values$current_step <- "time_restricted"
+    }
+  })
   
   # ============================================================================
   # STEP VISIBILITY CONTROLS
@@ -171,34 +118,23 @@ server <- function(input, output, session) {
   })
   
   # ============================================================================
-  # MOBILE-OPTIMIZED ACCESS CODE HANDLING
+  # ACCESS CODE HANDLING WITH MOBILE IMPROVEMENTS
   # ============================================================================
   
-  # Clean input for mobile compatibility (prevents infinite loop)
+  # Simple input cleaning for mobile (just trim whitespace, preserve case)
   observeEvent(input$access_code, {
-    if (!is.null(input$access_code) && 
-        input$access_code != values$last_cleaned_code &&
-        nchar(input$access_code) > 0) {
+    if (!is.null(input$access_code) && nchar(input$access_code) > 0) {
+      # Clear errors when typing
+      values$error_message <- NULL
       
-      # Clean the input by removing whitespace only (preserve case for case-sensitive codes)
-      cleaned_code <- trimws(input$access_code)
-      
-      # Only update if the cleaned code is different from current input
-      if (cleaned_code != input$access_code) {
-        values$last_cleaned_code <- cleaned_code
-        updateTextInput(session, "access_code", value = cleaned_code)
+      # Simple whitespace trimming only
+      trimmed <- trimws(input$access_code)
+      if (trimmed != input$access_code && nchar(trimmed) > 0) {
+        updateTextInput(session, "access_code", value = trimmed)
       }
     }
   })
   
-  # Clear error when user starts typing
-  observeEvent(input$access_code, {
-    if (!is.null(input$access_code) && nchar(input$access_code) > 0) {
-      values$error_message <- NULL
-    }
-  })
-  
-  # Access code submission with mobile error handling
   observeEvent(input$submit_access, {
     req(input$access_code)
     
@@ -211,56 +147,49 @@ server <- function(input, output, session) {
     
     values$error_message <- NULL
     
-    # Add comprehensive error handling for mobile connectivity issues
-    tryCatch({
-      # Find participant by access code
-      if (!is.null(resident_data) && nrow(resident_data) > 0) {
-        participant <- resident_data[resident_data$access_code == input$access_code, ]
+    # Find participant by access code
+    if (!is.null(resident_data) && nrow(resident_data) > 0) {
+      participant <- resident_data[resident_data$access_code == input$access_code, ]
+      
+      if (nrow(participant) > 0) {
+        values$participant <- participant[1, ]  # Take first match
+        values$current_step <- "question"
         
-        if (nrow(participant) > 0) {
-          values$participant <- participant[1, ]  # Take first match
-          values$current_step <- "question"
-          
-          # Clear the access code input and reset tracking
-          updateTextInput(session, "access_code", value = "")
-          values$last_cleaned_code <- ""
-          
-          # Populate rotation choices when step becomes visible
-          updateSelectizeInput(
-            session, 
-            "q_rotation",
-            choices = c(
-              "Red" = "1",
-              "Green" = "2", 
-              "White" = "3",
-              "Yellow" = "4",
-              "Diamond" = "5",
-              "Gold" = "6",
-              "MICU" = "7",
-              "Bronze" = "8",
-              "Cardiology" = "9",
-              "Bridge / Acute Care" = "10",
-              "Consults - SLUH" = "11",
-              "Elective / Clinics CSM" = "12",
-              "VA A" = "13",
-              "VA B" = "14",
-              "VA C" = "15",
-              "VA D" = "16",
-              "VA Clinics or Consults" = "17"
-            ),
-            selected = character(0)
-          )
-          
-        } else {
-          values$error_message <- "Invalid access code. Please check your code and try again."
-        }
+        # Clear the access code input
+        updateTextInput(session, "access_code", value = "")
+        
+        # Populate rotation choices when step becomes visible
+        updateSelectizeInput(
+          session, 
+          "q_rotation",
+          choices = c(
+            "Red" = "1",
+            "Green" = "2", 
+            "White" = "3",
+            "Yellow" = "4",
+            "Diamond" = "5",
+            "Gold" = "6",
+            "MICU" = "7",
+            "Bronze" = "8",
+            "Cardiology" = "9",
+            "Bridge / Acute Care" = "10",
+            "Consults - SLUH" = "11",
+            "Elective / Clinics CSM" = "12",
+            "VA A" = "13",
+            "VA B" = "14",
+            "VA C" = "15",
+            "VA D" = "16",
+            "VA Clinics or Consults" = "17"
+          ),
+          selected = character(0)
+        )
+        
       } else {
-        values$error_message <- "Unable to validate access code. Please try again later."
+        values$error_message <- "Invalid access code. Please check your code and try again."
       }
-    }, error = function(e) {
-      values$error_message <- "Connection error. Please check your internet connection and try again."
-      cat("Error in access code validation:", e$message, "\n")
-    })
+    } else {
+      values$error_message <- "Unable to validate access code. Please try again later."
+    }
   })
   
   # ============================================================================
@@ -282,7 +211,7 @@ server <- function(input, output, session) {
   })
   
   # ============================================================================
-  # RESPONSE SUBMISSION WITH MOBILE ERROR HANDLING
+  # RESPONSE SUBMISSION
   # ============================================================================
   
   observeEvent(input$submit_response, {
@@ -299,27 +228,21 @@ server <- function(input, output, session) {
     
     values$error_message <- NULL
     
-    # Add comprehensive error handling for mobile connectivity
-    tryCatch({
-      # Submit to REDCap
-      success <- submit_question_response(
-        record_id = values$participant$record_id,
-        rotation = input$q_rotation,
-        answer = input$q_answer
-      )
-      
-      if (success) {
-        values$current_step <- "success"
-        # Reset form values
-        updateSelectizeInput(session, "q_rotation", selected = character(0))
-        updateRadioButtons(session, "q_answer", selected = character(0))
-      } else {
-        values$error_message <- "Failed to submit response. Please try again."
-      }
-    }, error = function(e) {
-      values$error_message <- "Network error during submission. Please check your connection and try again."
-      cat("Error in response submission:", e$message, "\n")
-    })
+    # Submit to REDCap
+    success <- submit_question_response(
+      record_id = values$participant$record_id,
+      rotation = input$q_rotation,
+      answer = input$q_answer
+    )
+    
+    if (success) {
+      values$current_step <- "success"
+      # Reset form values
+      updateSelectizeInput(session, "q_rotation", selected = character(0))
+      updateRadioButtons(session, "q_answer", selected = character(0))
+    } else {
+      values$error_message <- "Failed to submit response. Please try again."
+    }
   })
   
   # ============================================================================
@@ -339,7 +262,6 @@ server <- function(input, output, session) {
     values$current_step <- "access"
     values$participant <- NULL
     values$error_message <- NULL
-    values$last_cleaned_code <- ""
     
     # Reset all inputs
     updateTextInput(session, "access_code", value = "")

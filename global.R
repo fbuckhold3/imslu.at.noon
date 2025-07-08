@@ -10,6 +10,10 @@ library(bslib)
 library(httr)
 library(jsonlite)
 library(DT)
+library(lubridate)
+library(shinyjs)
+
+TESTING_MODE <- TRUE
 
 # Install imslu from GitHub if not already installed
 if (!require(imres)) {

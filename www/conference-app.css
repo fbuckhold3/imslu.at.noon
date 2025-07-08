@@ -13,6 +13,18 @@
   --ssm-white: #ffffff;
   --ssm-text-primary: #2c3e50;
   --ssm-text-secondary: #546e7a;
+  
+  /* Spacing and layout */
+  --border-radius: 12px;
+  --border-radius-lg: 20px;
+  --box-shadow: 0 10px 40px rgba(0, 61, 92, 0.08);
+  --transition: all 0.3s ease;
+}
+
+/* Base Styles */
+html, body {
+  overflow-x: hidden;
+  min-height: 100vh;
 }
 
 body {
@@ -20,10 +32,9 @@ body {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   color: var(--ssm-text-primary);
   line-height: 1.6;
-  min-height: 100vh;
 }
 
-/* Header Styling */
+/* Header */
 .conference-header {
   background: linear-gradient(135deg, var(--ssm-primary-blue) 0%, var(--ssm-secondary-blue) 100%);
   color: var(--ssm-white);
@@ -42,16 +53,17 @@ body {
   opacity: 0.9;
 }
 
-/* Professional Card System */
+/* Card System */
 .ssm-card {
   background: var(--ssm-white);
   border: none;
-  border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0, 61, 92, 0.08);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--box-shadow);
   margin-bottom: 2rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: var(--transition);
   position: relative;
   overflow: hidden;
+  animation: fadeInUp 0.6s ease-out;
 }
 
 .ssm-card::before {
@@ -68,7 +80,7 @@ body {
   background: linear-gradient(135deg, var(--ssm-primary-blue) 0%, var(--ssm-secondary-blue) 100%);
   color: var(--ssm-white);
   padding: 2rem;
-  border-radius: 20px 20px 0 0;
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
   margin-bottom: 0;
   position: relative;
   overflow: hidden;
@@ -85,226 +97,73 @@ body {
   padding: 2rem;
 }
 
-/* Access Form Styling */
-.access-form {
-  text-align: center;
+/* Form Controls */
+.form-control,
+.form-control-lg {
+  border-radius: var(--border-radius);
+  border: 2px solid #e9ecef;
+  transition: var(--transition);
+  font-size: 16px; /* Prevents iOS zoom */
 }
 
-/* Access Code Input Specific Styling */
-#access_code {
-  font-size: 1.25rem !important;
-  padding: 1rem 1.5rem !important;
-  text-align: center !important;
+.form-control {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
 }
 
 .form-control-lg {
   font-size: 1.25rem;
   padding: 1rem 1.5rem;
-  border-radius: 12px;
-  border: 2px solid #e9ecef;
-  transition: all 0.3s ease;
 }
 
+.form-control:focus,
 .form-control-lg:focus {
   border-color: var(--ssm-secondary-blue);
   box-shadow: 0 0 0 4px rgba(0, 102, 161, 0.1);
+  outline: none;
 }
 
-/* Time Restriction Styling */
-.time-restriction-content {
-  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-  border: 1px solid var(--ssm-warning-orange);
-  border-radius: 16px;
-  padding: 2rem;
+#access_code {
+  text-align: center !important;
+  letter-spacing: 1px;
 }
 
-.restriction-icon {
-  opacity: 0.8;
-}
-
-.text-warning {
-  color: var(--ssm-warning-orange) !important;
-}
-
-.restriction-message {
-  font-size: 1.1rem;
-  line-height: 1.6;
-  color: var(--ssm-text-primary);
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.current-time-display {
+/* Form Labels and Help Text */
+.form-label {
   font-size: 1rem;
-  color: var(--ssm-text-secondary);
-  background: rgba(255, 255, 255, 0.7);
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  display: inline-block;
-}
-
-/* Participant Card */
-.participant-card {
-  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
-  border: 1px solid rgba(0, 102, 161, 0.15);
-  border-radius: 16px;
-  padding: 1.5rem;
-  position: relative;
-}
-
-.conference-date {
-  text-align: right;
-}
-
-.conference-date .fw-bold {
-  font-size: 1rem;
-  color: var(--ssm-primary-blue);
-}
-
-.conference-date .small {
-  font-size: 0.8rem;
-}
-
-.participant-icon {
-  font-size: 3rem;
-  opacity: 0.8;
-}
-
-.participant-name {
-  color: var(--ssm-primary-blue);
-  font-weight: 700;
-  font-size: 1.5rem;
-  margin: 0;
-}
-
-/* Rotation Search */
-.rotation-search-container {
-  position: relative;
-}
-
-/* Rotation Search Results */
-.rotation-results-container {
-  max-height: 200px;
-  overflow-y: auto;
-  margin-top: 0.5rem;
-}
-
-.rotation-option {
-  text-align: left !important;
-  padding: 0.75rem 1rem !important;
-  border: 1px solid #e9ecef !important;
-  background: white !important;
-  color: var(--ssm-text-primary) !important;
-  transition: all 0.2s ease !important;
-  border-radius: 8px !important;
-}
-
-.rotation-option:hover {
-  background: #f8f9fa !important;
-  border-color: var(--ssm-secondary-blue) !important;
-  color: var(--ssm-secondary-blue) !important;
-  border-left: 4px solid var(--ssm-secondary-blue) !important;
-}
-
-.rotation-results {
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  background: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.rotation-option {
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  border-bottom: 1px solid #f8f9fa;
-  transition: all 0.2s ease;
-}
-
-.rotation-option:hover {
-  background: #f8f9fa;
-  border-left: 4px solid var(--ssm-secondary-blue);
-}
-
-.rotation-option:last-child {
-  border-bottom: none;
-}
-
-.rotation-name {
-  font-weight: 500;
-  color: var(--ssm-text-primary);
-}
-
-/* Selected Rotation Display */
-.selected-rotation {
-  background: rgba(0, 166, 81, 0.1);
-  border: 1px solid rgba(0, 166, 81, 0.2);
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-}
-
-.rotation-icon {
-  font-size: 1.25rem;
-  opacity: 0.8;
-}
-
-/* Question Section */
-.question-section {
-  margin-top: 2rem;
-}
-
-.question-text {
-  font-size: 1.2rem;
   font-weight: 600;
   color: var(--ssm-text-primary);
-  text-align: center;
-}
-
-/* Radio Button Styling */
-.radio {
-  margin-bottom: 1rem;
-}
-
-.radio input[type="radio"] {
-  margin-right: 0.75rem;
-  transform: scale(1.2);
-}
-
-.radio label {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: var(--ssm-text-primary);
-  cursor: pointer;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  margin-bottom: 0.5rem;
   display: block;
-  margin-bottom: 0;
 }
 
-.radio label:hover {
-  background: #f8f9fa;
-}
-
-.radio input[type="radio"]:checked + label {
-  background: rgba(0, 166, 81, 0.1);
-  color: var(--ssm-success-green);
+.form-label.required::after {
+  content: ' *';
+  color: #dc3545;
   font-weight: 600;
 }
 
-/* Button Styling */
+.form-help {
+  font-size: 0.85rem;
+  color: var(--ssm-text-secondary);
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+/* Buttons */
 .btn {
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   font-weight: 600;
   padding: 0.75rem 2rem;
-  transition: all 0.3s ease;
+  transition: var(--transition);
   border-width: 2px;
+  min-height: 44px; /* Touch target */
 }
 
 .btn-lg {
   padding: 1rem 2.5rem;
   font-size: 1.1rem;
+  min-height: 50px;
 }
 
 .btn-primary {
@@ -356,7 +215,144 @@ body {
   color: white;
 }
 
-/* Success Step */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Time Restriction */
+.time-restriction-content {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 1px solid var(--ssm-warning-orange);
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+.restriction-icon {
+  opacity: 0.8;
+}
+
+.text-warning {
+  color: var(--ssm-warning-orange) !important;
+}
+
+.restriction-message {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--ssm-text-primary);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.current-time-display {
+  font-size: 1rem;
+  color: var(--ssm-text-secondary);
+  background: rgba(255, 255, 255, 0.7);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+/* Participant Card */
+.participant-card {
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+  border: 1px solid rgba(0, 102, 161, 0.15);
+  border-radius: 16px;
+  padding: 1.5rem;
+  position: relative;
+}
+
+.participant-icon {
+  font-size: 3rem;
+  opacity: 0.8;
+}
+
+.participant-name {
+  color: var(--ssm-primary-blue);
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.conference-date {
+  text-align: right;
+}
+
+.conference-date .fw-bold {
+  font-size: 1rem;
+  color: var(--ssm-primary-blue);
+}
+
+.conference-date .small {
+  font-size: 0.8rem;
+}
+
+/* Question Section */
+.question-section {
+  margin-top: 2rem;
+}
+
+.question-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--ssm-text-primary);
+  text-align: center;
+}
+
+/* Radio Buttons */
+.radio {
+  margin-bottom: 1rem;
+}
+
+.radio input[type="radio"] {
+  margin-right: 0.75rem;
+  transform: scale(1.2);
+}
+
+.radio label {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--ssm-text-primary);
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: block;
+  margin-bottom: 0;
+}
+
+.radio label:hover {
+  background: #f8f9fa;
+}
+
+.radio input[type="radio"]:checked + label {
+  background: rgba(0, 166, 81, 0.1);
+  color: var(--ssm-success-green);
+  font-weight: 600;
+}
+
+/* Selectize Dropdown */
+.selectize-input {
+  min-height: 44px;
+  padding: 12px 16px;
+  font-size: 16px;
+  border-radius: var(--border-radius);
+  border: 2px solid #e9ecef;
+  transition: var(--transition);
+}
+
+.selectize-input:focus {
+  border-color: var(--ssm-secondary-blue);
+  box-shadow: 0 0 0 4px rgba(0, 102, 161, 0.1);
+}
+
+.selectize-dropdown {
+  font-size: 16px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+/* Success State */
 .success-content {
   text-align: center;
 }
@@ -370,44 +366,9 @@ body {
   color: var(--ssm-success-green) !important;
 }
 
-/* Form Elements */
-.form-label {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--ssm-text-primary);
-  margin-bottom: 0.5rem;
-  display: block;
-}
-
-.form-label.required::after {
-  content: ' *';
-  color: #dc3545;
-  font-weight: 600;
-}
-
-.form-help {
-  font-size: 0.85rem;
-  color: var(--ssm-text-secondary);
-  margin-top: 0.25rem;
-  line-height: 1.4;
-}
-
-.form-control {
-  border-radius: 8px;
-  border: 2px solid #e9ecef;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-
-.form-control:focus {
-  border-color: var(--ssm-secondary-blue);
-  box-shadow: 0 0 0 3px rgba(0, 102, 161, 0.1);
-}
-
-/* Alert Styling */
+/* Alerts */
 .alert {
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   border: none;
   padding: 1rem 1.25rem;
 }
@@ -436,9 +397,48 @@ body {
   margin-top: auto;
 }
 
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Accessibility */
+.btn:focus,
+.form-control:focus,
+.selectize-input:focus {
+  outline: 2px solid var(--ssm-accent-blue);
+  outline-offset: 2px;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  :root {
+    --ssm-primary-blue: #000066;
+    --ssm-secondary-blue: #0033cc;
+    --ssm-success-green: #006600;
+  }
+  
+  .ssm-card {
+    border: 2px solid #666;
+  }
+  
+  .form-control,
+  .form-control-lg {
+    border: 2px solid #333;
+  }
+}
+
 /* Mobile Responsive Design */
-@media (max-width: 768px) {
-  .container {
+@media screen and (max-width: 768px) {
+  .container,
+  .container-fluid {
     padding-left: 1rem;
     padding-right: 1rem;
   }
@@ -486,12 +486,17 @@ body {
     font-size: 3rem;
   }
   
-  .rotation-results {
-    max-height: 150px;
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  /* Fix for mobile keyboard issues */
+  input:focus {
+    transform: translateY(0);
   }
 }
 
-@media (max-width: 576px) {
+@media screen and (max-width: 576px) {
   .conference-header .container-fluid {
     text-align: center;
   }
@@ -527,61 +532,8 @@ body {
     padding: 0 1rem;
   }
   
-  .rotation-option {
-    padding: 1rem;
+  .conference-date {
     text-align: center;
-  }
-  
-  .selected-rotation .d-flex {
-    flex-direction: column;
-    text-align: center;
-    gap: 1rem;
-  }
-}
-
-/* Animation for smooth transitions */
-.ssm-card {
-  animation: fadeInUp 0.6s ease-out;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Loading states */
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Focus states for accessibility */
-.btn:focus,
-.form-control:focus,
-.rotation-option:focus {
-  outline: 2px solid var(--ssm-accent-blue);
-  outline-offset: 2px;
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  :root {
-    --ssm-primary-blue: #000066;
-    --ssm-secondary-blue: #0033cc;
-    --ssm-success-green: #006600;
-  }
-  
-  .ssm-card {
-    border: 2px solid #666;
-  }
-  
-  .form-control {
-    border: 2px solid #333;
+    margin-top: 1rem;
   }
 }

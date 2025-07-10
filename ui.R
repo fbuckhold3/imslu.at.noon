@@ -190,6 +190,8 @@ ui <- fluidPage(
           div(
             class = "access-form mx-auto",
             style = "max-width: 400px;",
+            # Replace your existing tags$input with this updated version:
+            
             div(
               class = "form-group mb-4",
               tags$label(
@@ -205,10 +207,14 @@ ui <- fluidPage(
                 class = "form-control form-control-lg text-center",
                 placeholder = "Enter your access code",
                 style = "font-size: 18px; letter-spacing: 1px;",
+                # Mobile-friendly attributes - these are the key additions
                 autocomplete = "off",
                 autocorrect = "off",
                 autocapitalize = "off",
-                spellcheck = "false"
+                spellcheck = "false",
+                # Additional attributes to prevent mobile issues
+                inputmode = "text",
+                pattern = "[A-Za-z0-9]*"  # Only allow alphanumeric characters
               ),
               div(
                 class = "form-help mt-2",

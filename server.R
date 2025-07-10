@@ -13,6 +13,63 @@ server <- function(input, output, session) {
     time_check = NULL
   )
   
+  # Function to clean access code input (add this to your global.R or at top of server)
+  clean_access_code <- function(code) {
+    if (is.null(code) || is.na(code) || nchar(code) == 0) {
+      return("")
+    }
+    
+    # Step 1: Basic trimming
+    cleaned <- trimws(code)
+    
+    # Step 2: Remove common invisible characters that mobile keyboards insert
+    # Remove non-breaking spaces, zero-width spaces, etc.
+    cleaned <- gsub("[\u00A0\u2000-\u200F\u2028-\u202F\u205F-\u206F\uFEFF]", "", cleaned)
+    
+    # Step 3: Normalize Unicode (handles different types of similar characters)
+    # This handles cases where mobile keyboards insert different Unicode versions
+    if (requireNamespace("stringi", quietly = TRUE)) {
+      cleaned <- stringi::stri_trans_nfc(cleaned)  # Normalize to composed form
+    }
+    
+    # Step 4: Remove any remaining non-alphanumeric characters
+    # Only keep letters and numbers (adjust if your codes have other valid characters)
+    cleaned <- gsub("[^A-Za-z0-9]", "", cleaned)
+    
+    return(cleaned)
+  }
+  
+  # Function to find participant with flexible matching
+  find_participant <- function(input_code, data) {
+    if (is.null(data) || nrow(data) == 0 || is.null(input_code) || nchar(input_code) == 0) {
+      return(NULL)
+    }
+    
+    # Clean the input code
+    cleaned_input <- clean_access_code(input_code)
+    
+    # Try exact match first (case-sensitive)
+    exact_match <- data[data$access_code == cleaned_input, ]
+    if (nrow(exact_match) > 0) {
+      return(exact_match[1, ])
+    }
+    
+    # Try case-insensitive match
+    case_insensitive_match <- data[toupper(data$access_code) == toupper(cleaned_input), ]
+    if (nrow(case_insensitive_match) > 0) {
+      return(case_insensitive_match[1, ])
+    }
+    
+    # If still no match, try cleaning all stored codes and comparing
+    for (i in seq_len(nrow(data))) {
+      if (toupper(clean_access_code(data$access_code[i])) == toupper(cleaned_input)) {
+        return(data[i, ])
+      }
+    }
+    
+    return(NULL)
+  }
+  
   # ============================================================================
   # MOBILE COMPATIBILITY - HTTPS REDIRECT ONLY
   # ============================================================================
@@ -127,10 +184,21 @@ server <- function(input, output, session) {
       # Clear errors when typing
       values$error_message <- NULL
       
-      # Simple whitespace trimming only
-      trimmed <- trimws(input$access_code)
-      if (trimmed != input$access_code && nchar(trimmed) > 0) {
-        updateTextInput(session, "access_code", value = trimmed)
+      # Clean the input
+      cleaned <- clean_access_code(input$access_code)
+      
+      # Only update if cleaning changed something and result is not empty
+      if (cleaned != input$access_code && nchar(cleaned) > 0) {
+        updateTextInput(session, "access_code", value = cleaned)
+      }
+      
+      # Debug output for troubleshooting
+      if (cleaned != input$access_code) {
+        cat("Access code cleaned:\n")
+        cat("  Original: '", input$access_code, "' (", nchar(input$access_code), " chars)\n")
+        cat("  Cleaned:  '", cleaned, "' (", nchar(cleaned), " chars)\n")
+        cat("  Raw bytes original:", paste(charToRaw(input$access_code), collapse = " "), "\n")
+        cat("  Raw bytes cleaned: ", paste(charToRaw(cleaned), collapse = " "), "\n")
       }
     }
   })
@@ -147,48 +215,52 @@ server <- function(input, output, session) {
     
     values$error_message <- NULL
     
-    # Find participant by access code
-    if (!is.null(resident_data) && nrow(resident_data) > 0) {
-      participant <- resident_data[resident_data$access_code == input$access_code, ]
+    # Find participant using robust matching
+    participant <- find_participant(input$access_code, resident_data)
+    
+    if (!is.null(participant)) {
+      values$participant <- participant
+      values$current_step <- "question"
       
-      if (nrow(participant) > 0) {
-        values$participant <- participant[1, ]  # Take first match
-        values$current_step <- "question"
-        
-        # Clear the access code input
-        updateTextInput(session, "access_code", value = "")
-        
-        # Populate rotation choices when step becomes visible
-        updateSelectizeInput(
-          session, 
-          "q_rotation",
-          choices = c(
-            "Red" = "1",
-            "Green" = "2", 
-            "White" = "3",
-            "Yellow" = "4",
-            "Diamond" = "5",
-            "Gold" = "6",
-            "MICU" = "7",
-            "Bronze" = "8",
-            "Cardiology" = "9",
-            "Bridge / Acute Care" = "10",
-            "Consults - SLUH" = "11",
-            "Elective / Clinics CSM" = "12",
-            "VA A" = "13",
-            "VA B" = "14",
-            "VA C" = "15",
-            "VA D" = "16",
-            "VA Clinics or Consults" = "17"
-          ),
-          selected = character(0)
-        )
-        
-      } else {
-        values$error_message <- "Invalid access code. Please check your code and try again."
-      }
+      # Clear the access code input
+      updateTextInput(session, "access_code", value = "")
+      
+      # Populate rotation choices when step becomes visible
+      updateSelectizeInput(
+        session, 
+        "q_rotation",
+        choices = c(
+          "Red" = "1",
+          "Green" = "2", 
+          "White" = "3",
+          "Yellow" = "4",
+          "Diamond" = "5",
+          "Gold" = "6",
+          "MICU" = "7",
+          "Bronze" = "8",
+          "Cardiology" = "9",
+          "Bridge / Acute Care" = "10",
+          "Consults - SLUH" = "11",
+          "Elective / Clinics CSM" = "12",
+          "VA A" = "13",
+          "VA B" = "14",
+          "VA C" = "15",
+          "VA D" = "16",
+          "VA Clinics or Consults" = "17"
+        ),
+        selected = character(0)
+      )
+      
+      # Log successful access for debugging
+      cat("Access granted for code:", input$access_code, "\n")
+      
     } else {
-      values$error_message <- "Unable to validate access code. Please try again later."
+      values$error_message <- "Invalid access code. Please check your code and try again."
+      
+      # Debug logging for failed attempts
+      cat("Access denied for code:", input$access_code, "\n")
+      cat("  Cleaned version:", clean_access_code(input$access_code), "\n")
+      cat("  Available codes:", paste(head(resident_data$access_code, 5), collapse = ", "), "...\n")
     }
   })
   

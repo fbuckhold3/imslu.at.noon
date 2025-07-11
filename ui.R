@@ -198,17 +198,20 @@ ui <- fluidPage(
                 style = "font-size: clamp(1rem, 3.5vw, 1.1rem);",
                 `for` = "access_code"
               ),
-              textInput("access_code", 
-                        "Enter Access Code:", 
-                        value = "",
-                        placeholder = "Enter your code here",
-                        # Enhanced mobile attributes
-                        `autocomplete` = "off",
-                        `autocorrect` = "off", 
-                        `autocapitalize` = "characters",  # Force uppercase on mobile
-                        `spellcheck` = "false",
-                        `data-lpignore` = "true",  # Prevent password managers
-                        `inputmode` = "text"       # Optimize mobile keyboard
+              tags$input(
+                id = "access_code",
+                type = "text",
+                class = "form-control form-control-lg",
+                placeholder = "Enter your code here",
+                value = "",
+                # Mobile-optimized attributes
+                autocomplete = "off",
+                autocorrect = "off",
+                autocapitalize = "characters",
+                spellcheck = "false",
+                `data-lpignore` = "true",
+                inputmode = "text",
+                style = "font-size: 16px; padding: 15px 20px;"
               ),
               div(
                 class = "form-help mt-2",

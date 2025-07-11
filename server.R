@@ -24,22 +24,28 @@ server <- function(input, output, session) {
       return("")
     }
     
-    # Step 1: Basic trimming
-    cleaned <- trimws(code)
+    # Step 1: Convert to character and basic trimming
+    cleaned <- as.character(code)
+    cleaned <- trimws(cleaned)
     
-    # Step 2: Remove common invisible characters that mobile keyboards insert
-    # Remove non-breaking spaces, zero-width spaces, etc.
-    cleaned <- gsub("[\u00A0\u2000-\u200F\u2028-\u202F\u205F-\u206F\uFEFF]", "", cleaned)
+    # Step 2: Remove iOS-specific invisible characters and formatting
+    # This is more comprehensive than your current version
+    cleaned <- gsub("[\u00A0\u2000-\u200F\u2028-\u202F\u205F-\u206F\uFEFF\u200B-\u200D\u2060\uFEFF]", "", cleaned)
     
-    # Step 3: Normalize Unicode (handles different types of similar characters)
-    # This handles cases where mobile keyboards insert different Unicode versions
+    # Step 3: Remove iOS auto-correction artifacts (smart quotes, etc.)
+    cleaned <- gsub("[\u2018\u2019\u201C\u201D\u2013\u2014]", "", cleaned)
+    
+    # Step 4: Normalize Unicode more aggressively
     if (requireNamespace("stringi", quietly = TRUE)) {
       cleaned <- stringi::stri_trans_nfc(cleaned)  # Normalize to composed form
+      cleaned <- stringi::stri_trans_general(cleaned, "Any-Latin; Latin-ASCII")  # Convert to ASCII
     }
     
-    # Step 4: Remove any remaining non-alphanumeric characters
-    # Only keep letters and numbers (adjust if your codes have other valid characters)
-    cleaned <- gsub("[^A-Za-z0-9]", "", cleaned)
+    # Step 5: Handle case sensitivity issues (convert to uppercase for consistency)
+    cleaned <- toupper(cleaned)
+    
+    # Step 6: Remove any remaining non-alphanumeric characters
+    cleaned <- gsub("[^A-Z0-9]", "", cleaned)
     
     return(cleaned)
   }
@@ -47,33 +53,34 @@ server <- function(input, output, session) {
   # Function to find participant with flexible matching
   find_participant <- function(input_code, data) {
     if (is.null(data) || nrow(data) == 0 || is.null(input_code) || nchar(input_code) == 0) {
+      cat("find_participant: Invalid input data\n")
       return(NULL)
     }
     
     # Clean the input code
     cleaned_input <- clean_access_code(input_code)
+    cat("find_participant: Searching for cleaned code '", cleaned_input, "'\n")
     
-    # Try exact match first (case-sensitive)
-    exact_match <- data[data$access_code == cleaned_input, ]
+    # Clean all stored codes for comparison (do this once)
+    data$access_code_cleaned <- sapply(data$access_code, clean_access_code)
+    
+    # Try exact match with cleaned codes
+    exact_match <- data[data$access_code_cleaned == cleaned_input, ]
     if (nrow(exact_match) > 0) {
+      cat("find_participant: Found exact match\n")
       return(exact_match[1, ])
     }
     
-    # Try case-insensitive match
-    case_insensitive_match <- data[toupper(data$access_code) == toupper(cleaned_input), ]
-    if (nrow(case_insensitive_match) > 0) {
-      return(case_insensitive_match[1, ])
-    }
-    
-    # If still no match, try cleaning all stored codes and comparing
-    for (i in seq_len(nrow(data))) {
-      if (toupper(clean_access_code(data$access_code[i])) == toupper(cleaned_input)) {
-        return(data[i, ])
-      }
+    # Debug: Show available codes for troubleshooting
+    cat("find_participant: No match found. Available codes (first 10):\n")
+    available_codes <- head(data$access_code_cleaned, 10)
+    for(i in seq_along(available_codes)) {
+      cat("  ", i, ": '", available_codes[i], "'\n")
     }
     
     return(NULL)
   }
+  
   
   # ============================================================================
   # MOBILE COMPATIBILITY - HTTPS REDIRECT ONLY
@@ -213,7 +220,6 @@ server <- function(input, output, session) {
   # ACCESS CODE HANDLING WITH MOBILE IMPROVEMENTS
   # ============================================================================
   
-  # Real-time input cleaning for mobile
   observeEvent(input$access_code, {
     if (!is.null(input$access_code) && nchar(input$access_code) > 0) {
       # Clear errors when typing
@@ -222,25 +228,27 @@ server <- function(input, output, session) {
       # Clean the input
       cleaned <- clean_access_code(input$access_code)
       
-      # Only update if cleaning changed something and result is not empty
+      # Enhanced debugging
+      cat("=== ACCESS CODE INPUT DEBUG ===\n")
+      cat("Original input: '", input$access_code, "'\n")
+      cat("Length: ", nchar(input$access_code), "\n")
+      cat("Cleaned: '", cleaned, "'\n")
+      cat("Raw bytes: ", paste(utf8ToInt(input$access_code), collapse = ", "), "\n")
+      
+      # Update input field if cleaning changed something
       if (cleaned != input$access_code && nchar(cleaned) > 0) {
         updateTextInput(session, "access_code", value = cleaned)
-      }
-      
-      # Debug output for troubleshooting
-      if (cleaned != input$access_code) {
-        cat("Access code cleaned:\n")
-        cat("  Original: '", input$access_code, "' (", nchar(input$access_code), " chars)\n")
-        cat("  Cleaned:  '", cleaned, "' (", nchar(cleaned), " chars)\n")
-        cat("  Raw bytes original:", paste(charToRaw(input$access_code), collapse = " "), "\n")
-        cat("  Raw bytes cleaned: ", paste(charToRaw(cleaned), collapse = " "), "\n")
+        cat("Updated input field with cleaned value\n")
       }
     }
-  })
+  }, ignoreInit = TRUE)
   
-  # Access code submission
+  # Enhanced access code submission handler
+  # Replace your existing observeEvent(input$submit_access, ...) with this:
   observeEvent(input$submit_access, {
     req(input$access_code)
+    
+    cat("=== ACCESS CODE SUBMISSION ===\n")
     
     # First check if we're in any time window
     time_check <- is_conference_time()
@@ -251,10 +259,14 @@ server <- function(input, output, session) {
     
     values$error_message <- NULL
     
+    # Enhanced debugging for the search
+    cat("Attempting to find participant for code: '", input$access_code, "'\n")
+    
     # Find participant using robust matching
     participant <- find_participant(input$access_code, resident_data)
     
     if (!is.null(participant)) {
+      cat("✅ Access granted!\n")
       values$participant <- participant
       values$current_step <- "question"
       
@@ -276,18 +288,21 @@ server <- function(input, output, session) {
       # Store current conference info for display
       values$current_conference <- current_conference
       
-      # Log successful access for debugging
-      cat("Access granted for code:", input$access_code, "\n")
-      cat("Conference type:", time_check$conference_type, "\n")
-      cat("Available rotations:", length(current_choices), "\n")
-      
     } else {
-      values$error_message <- "Invalid access code. Please check your code and try again."
+      cat("❌ Access denied\n")
+      values$error_message <- paste("Invalid access code. Please check your code and try again.",
+                                    "If you continue having issues, try typing the code manually instead of copying/pasting.")
       
-      # Debug logging for failed attempts
+      # Enhanced debug logging for failed attempts
+      cleaned_code <- clean_access_code(input$access_code)
       cat("Access denied for code:", input$access_code, "\n")
-      cat("  Cleaned version:", clean_access_code(input$access_code), "\n")
-      cat("  Available codes:", paste(head(resident_data$access_code, 5), collapse = ", "), "...\n")
+      cat("  Cleaned version:", cleaned_code, "\n")
+      
+      # Show first few available codes for debugging
+      if (!is.null(resident_data) && nrow(resident_data) > 0) {
+        available_codes <- head(sapply(resident_data$access_code, clean_access_code), 5)
+        cat("  Available codes:", paste(available_codes, collapse = ", "), "...\n")
+      }
     }
   })
   

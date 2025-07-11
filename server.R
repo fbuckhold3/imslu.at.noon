@@ -47,6 +47,8 @@ server <- function(input, output, session) {
   }
   
   # Function to find participant with flexible matching
+  # Replace your find_participant function with this corrected version:
+  
   find_participant <- function(input_code, data) {
     if (is.null(data) || nrow(data) == 0 || is.null(input_code) || nchar(input_code) == 0) {
       cat("find_participant: Invalid input data\n")
@@ -57,14 +59,21 @@ server <- function(input, output, session) {
     cleaned_input <- clean_access_code(input_code)
     cat("find_participant: Searching for cleaned code '", cleaned_input, "'\n")
     
-    # Clean all stored codes for comparison (do this once)
-    ##data$access_code_cleaned <- sapply(data$access_code, clean_access_code)
+    # Clean all stored codes for comparison (UNCOMMENTED)
+    data$access_code_cleaned <- sapply(data$access_code, clean_access_code)
     
     # Try exact match with cleaned codes
     exact_match <- data[data$access_code_cleaned == cleaned_input, ]
     if (nrow(exact_match) > 0) {
       cat("find_participant: Found exact match\n")
       return(exact_match[1, ])
+    }
+    
+    # Try case-insensitive match as backup
+    case_insensitive_match <- data[toupper(data$access_code_cleaned) == toupper(cleaned_input), ]
+    if (nrow(case_insensitive_match) > 0) {
+      cat("find_participant: Found case-insensitive match\n")
+      return(case_insensitive_match[1, ])
     }
     
     # Debug: Show available codes for troubleshooting

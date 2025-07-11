@@ -18,15 +18,16 @@ server <- function(input, output, session) {
   # MOBILE INPUT CLEANING FUNCTIONS
   # ============================================================================
   
-  # Function to clean access code input
+  # Fixed clean_access_code function - the main issue:
   clean_access_code <- function(code) {
     if (is.null(code) || is.na(code) || nchar(code) == 0) {
       return("")
     }
     
-    # Step 1: Convert to character and basic trimming
+    # Step 1: Convert to character and AGGRESSIVE trimming
     cleaned <- as.character(code)
-    cleaned <- trimws(cleaned)
+    cleaned <- trimws(cleaned, which = "both")  # Explicit both sides
+    cleaned <- gsub("^\\s+|\\s+$", "", cleaned)  # Backup regex trim
     
     # Step 2: Remove iOS-specific invisible characters
     cleaned <- gsub("[\u00A0\u2000-\u200F\u2028-\u202F\u205F-\u206F\uFEFF\u200B-\u200D\u2060\uFEFF]", "", cleaned)
@@ -43,12 +44,15 @@ server <- function(input, output, session) {
     # Step 5: Remove any remaining non-alphanumeric characters (PRESERVING CASE)
     cleaned <- gsub("[^A-Za-z0-9]", "", cleaned)
     
+    # Debug output to see what's happening
+    if (code != cleaned) {
+      cat("CLEANING DEBUG: '", code, "' -> '", cleaned, "'\n")
+    }
+    
     return(cleaned)
   }
   
-  # Function to find participant with flexible matching
-  # Replace your find_participant function with this corrected version:
-  
+  # Updated find_participant function:
   find_participant <- function(input_code, data) {
     if (is.null(data) || nrow(data) == 0 || is.null(input_code) || nchar(input_code) == 0) {
       cat("find_participant: Invalid input data\n")
@@ -59,7 +63,7 @@ server <- function(input, output, session) {
     cleaned_input <- clean_access_code(input_code)
     cat("find_participant: Searching for cleaned code '", cleaned_input, "'\n")
     
-    # Clean all stored codes for comparison (UNCOMMENTED)
+    # Clean all stored codes for comparison
     data$access_code_cleaned <- sapply(data$access_code, clean_access_code)
     
     # Try exact match with cleaned codes
@@ -85,7 +89,6 @@ server <- function(input, output, session) {
     
     return(NULL)
   }
-  
   
   # ============================================================================
   # MOBILE COMPATIBILITY - HTTPS REDIRECT ONLY

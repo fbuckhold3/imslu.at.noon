@@ -39,7 +39,7 @@ CONFERENCE_1_NAME <- "SLUH Conference"
 
 # Second conference window (VA)
 CONFERENCE_2_START_TIME <- "12:25"  # 24-hour format HH:MM
-CONFERENCE_2_END_TIME <- "12:59"    # 24-hour format HH:MM
+CONFERENCE_2_END_TIME <- "12:40"    # 24-hour format HH:MM
 CONFERENCE_2_NAME <- "VA Conference"
 
 # ============================================================================

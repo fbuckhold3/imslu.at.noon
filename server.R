@@ -28,24 +28,20 @@ server <- function(input, output, session) {
     cleaned <- as.character(code)
     cleaned <- trimws(cleaned)
     
-    # Step 2: Remove iOS-specific invisible characters and formatting
-    # This is more comprehensive than your current version
+    # Step 2: Remove iOS-specific invisible characters
     cleaned <- gsub("[\u00A0\u2000-\u200F\u2028-\u202F\u205F-\u206F\uFEFF\u200B-\u200D\u2060\uFEFF]", "", cleaned)
     
-    # Step 3: Remove iOS auto-correction artifacts (smart quotes, etc.)
+    # Step 3: Remove iOS auto-correction artifacts
     cleaned <- gsub("[\u2018\u2019\u201C\u201D\u2013\u2014]", "", cleaned)
     
-    # Step 4: Normalize Unicode more aggressively
+    # Step 4: Normalize Unicode
     if (requireNamespace("stringi", quietly = TRUE)) {
-      cleaned <- stringi::stri_trans_nfc(cleaned)  # Normalize to composed form
-      cleaned <- stringi::stri_trans_general(cleaned, "Any-Latin; Latin-ASCII")  # Convert to ASCII
+      cleaned <- stringi::stri_trans_nfc(cleaned)
+      cleaned <- stringi::stri_trans_general(cleaned, "Any-Latin; Latin-ASCII")
     }
     
-    # Step 5: Handle case sensitivity issues (convert to uppercase for consistency)
-    ##cleaned <- toupper(cleaned)
-    
-    # Step 6: Remove any remaining non-alphanumeric characters
-    cleaned <- gsub("[^A-Z0-9]", "", cleaned)
+    # Step 5: Remove any remaining non-alphanumeric characters (PRESERVING CASE)
+    cleaned <- gsub("[^A-Za-z0-9]", "", cleaned)
     
     return(cleaned)
   }

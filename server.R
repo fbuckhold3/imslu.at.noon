@@ -42,7 +42,7 @@ server <- function(input, output, session) {
     }
     
     # Step 5: Handle case sensitivity issues (convert to uppercase for consistency)
-    cleaned <- toupper(cleaned)
+    ##cleaned <- toupper(cleaned)
     
     # Step 6: Remove any remaining non-alphanumeric characters
     cleaned <- gsub("[^A-Z0-9]", "", cleaned)
@@ -62,7 +62,7 @@ server <- function(input, output, session) {
     cat("find_participant: Searching for cleaned code '", cleaned_input, "'\n")
     
     # Clean all stored codes for comparison (do this once)
-    data$access_code_cleaned <- sapply(data$access_code, clean_access_code)
+    ##data$access_code_cleaned <- sapply(data$access_code, clean_access_code)
     
     # Try exact match with cleaned codes
     exact_match <- data[data$access_code_cleaned == cleaned_input, ]

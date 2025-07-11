@@ -207,7 +207,7 @@ ui <- fluidPage(
                 # Mobile-optimized attributes
                 autocomplete = "off",
                 autocorrect = "off",
-                autocapitalize = "characters",
+                autocapitalize = "none",
                 spellcheck = "false",
                 `data-lpignore` = "true",
                 inputmode = "text",

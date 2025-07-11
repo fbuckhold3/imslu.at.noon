@@ -10,10 +10,15 @@ server <- function(input, output, session) {
     current_step = "access",
     participant = NULL,
     error_message = NULL,
-    time_check = NULL
+    time_check = NULL,
+    current_conference = NULL
   )
   
-  # Function to clean access code input (add this to your global.R or at top of server)
+  # ============================================================================
+  # MOBILE INPUT CLEANING FUNCTIONS
+  # ============================================================================
+  
+  # Function to clean access code input
   clean_access_code <- function(code) {
     if (is.null(code) || is.na(code) || nchar(code) == 0) {
       return("")
@@ -100,16 +105,46 @@ server <- function(input, output, session) {
     }
   })
   
-  # Periodic time check (every 30 seconds)
+  # Enhanced periodic time check that updates rotation choices if conference changes
   observe({
-    invalidateLater(30000, session)  # 30 seconds
+    invalidateLater(30000, session)  # Check every 30 seconds
+    
+    previous_check <- values$time_check
     values$time_check <- is_conference_time()
     
-    # If time window opens, allow access
+    # If we're in the question step and the conference type changed
+    if (values$current_step == "question" && !is.null(previous_check)) {
+      
+      current_type <- values$time_check$conference_type
+      previous_type <- previous_check$conference_type
+      
+      # If conference type changed, update rotation choices
+      if (current_type != previous_type) {
+        if (values$time_check$allowed) {
+          # Update to new conference choices
+          new_choices <- get_current_rotation_choices()
+          updateSelectizeInput(
+            session, 
+            "q_rotation",
+            choices = new_choices,
+            selected = character(0)  # Clear selection since conference changed
+          )
+          
+          values$current_conference <- get_current_conference_name()
+          cat("Conference window changed - updated rotation choices\n")
+          
+        } else {
+          # Conference window closed
+          values$current_step <- "time_restricted"
+        }
+      }
+    }
+    
+    # Handle normal time window transitions
     if (values$time_check$allowed && values$current_step == "time_restricted") {
       values$current_step <- "access"
     }
-    # If time window closes, restrict access
+    
     if (!values$time_check$allowed && values$current_step != "time_restricted") {
       values$current_step <- "time_restricted"
     }
@@ -178,7 +213,7 @@ server <- function(input, output, session) {
   # ACCESS CODE HANDLING WITH MOBILE IMPROVEMENTS
   # ============================================================================
   
-  # Simple input cleaning for mobile (just trim whitespace, preserve case)
+  # Real-time input cleaning for mobile
   observeEvent(input$access_code, {
     if (!is.null(input$access_code) && nchar(input$access_code) > 0) {
       # Clear errors when typing
@@ -203,13 +238,14 @@ server <- function(input, output, session) {
     }
   })
   
+  # Access code submission
   observeEvent(input$submit_access, {
     req(input$access_code)
     
-    # First check if we're in the time window
+    # First check if we're in any time window
     time_check <- is_conference_time()
     if (!time_check$allowed) {
-      values$error_message <- "Conference submission window is currently closed. Please try again during the designated time."
+      values$error_message <- time_check$message
       return()
     }
     
@@ -225,34 +261,25 @@ server <- function(input, output, session) {
       # Clear the access code input
       updateTextInput(session, "access_code", value = "")
       
-      # Populate rotation choices when step becomes visible
+      # Get rotation choices for current conference window
+      current_choices <- get_current_rotation_choices()
+      current_conference <- get_current_conference_name()
+      
+      # Update rotation choices based on current conference
       updateSelectizeInput(
         session, 
         "q_rotation",
-        choices = c(
-          "Red" = "1",
-          "Green" = "2", 
-          "White" = "3",
-          "Yellow" = "4",
-          "Diamond" = "5",
-          "Gold" = "6",
-          "MICU" = "7",
-          "Bronze" = "8",
-          "Cardiology" = "9",
-          "Bridge / Acute Care" = "10",
-          "Consults - SLUH" = "11",
-          "Elective / Clinics CSM" = "12",
-          "VA A" = "13",
-          "VA B" = "14",
-          "VA C" = "15",
-          "VA D" = "16",
-          "VA Clinics or Consults" = "17"
-        ),
+        choices = current_choices,
         selected = character(0)
       )
       
+      # Store current conference info for display
+      values$current_conference <- current_conference
+      
       # Log successful access for debugging
       cat("Access granted for code:", input$access_code, "\n")
+      cat("Conference type:", time_check$conference_type, "\n")
+      cat("Available rotations:", length(current_choices), "\n")
       
     } else {
       values$error_message <- "Invalid access code. Please check your code and try again."
@@ -282,10 +309,19 @@ server <- function(input, output, session) {
     return("")
   })
   
+  # Add output for current conference name display
+  output$current_conference_name <- renderText({
+    if (!is.null(values$current_conference)) {
+      return(values$current_conference)
+    }
+    return(get_current_conference_name())
+  })
+  
   # ============================================================================
   # RESPONSE SUBMISSION
   # ============================================================================
   
+  # Enhanced response submission with conference type logging
   observeEvent(input$submit_response, {
     req(values$participant)
     req(input$q_rotation)
@@ -300,11 +336,12 @@ server <- function(input, output, session) {
     
     values$error_message <- NULL
     
-    # Submit to REDCap
+    # Submit to REDCap with conference context
     success <- submit_question_response(
       record_id = values$participant$record_id,
       rotation = input$q_rotation,
-      answer = input$q_answer
+      answer = input$q_answer,
+      conference_type = time_check$conference_type  # Pass conference type for logging
     )
     
     if (success) {
@@ -334,6 +371,7 @@ server <- function(input, output, session) {
     values$current_step <- "access"
     values$participant <- NULL
     values$error_message <- NULL
+    values$current_conference <- NULL
     
     # Reset all inputs
     updateTextInput(session, "access_code", value = "")

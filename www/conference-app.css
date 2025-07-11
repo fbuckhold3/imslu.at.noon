@@ -537,3 +537,53 @@ body {
     margin-top: 1rem;
   }
 }
+
+/* Enhanced mobile input styling for access code */
+#access_code {
+  font-size: 18px !important;
+  letter-spacing: 1px;
+  text-align: center;
+  padding: 15px 20px !important;
+  border-radius: 8px;
+  border: 2px solid #dee2e6;
+  transition: border-color 0.15s ease-in-out;
+  min-height: 50px;
+}
+
+#access_code:focus {
+  border-color: var(--ssm-primary-blue);
+  box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+  outline: none;
+}
+
+/* Prevent zoom on iOS while maintaining good UX */
+@media screen and (max-width: 768px) {
+  #access_code {
+    font-size: 16px !important; /* Prevents iOS zoom */
+    min-height: 50px;
+    padding: 12px 16px !important;
+  }
+}
+
+/* Better focus states for mobile */
+#access_code:focus {
+  transform: none; /* Prevent any transform that might cause issues */
+  zoom: 1; /* Explicit zoom prevention */
+}
+
+/* Additional mobile keyboard optimizations */
+@supports (-webkit-touch-callout: none) {
+  /* iOS-specific styles */
+  #access_code {
+    -webkit-appearance: none;
+    border-radius: 8px;
+  }
+}
+
+/* Android-specific optimizations */
+@media screen and (max-width: 768px) and (-webkit-min-device-pixel-ratio: 1) {
+  #access_code {
+    background-color: #ffffff;
+    -webkit-appearance: none;
+  }
+}

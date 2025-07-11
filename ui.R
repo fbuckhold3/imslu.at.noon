@@ -190,8 +190,6 @@ ui <- fluidPage(
           div(
             class = "access-form mx-auto",
             style = "max-width: 400px;",
-            # Replace your existing tags$input with this updated version:
-            
             div(
               class = "form-group mb-4",
               tags$label(
@@ -200,21 +198,12 @@ ui <- fluidPage(
                 style = "font-size: clamp(1rem, 3.5vw, 1.1rem);",
                 `for` = "access_code"
               ),
-              tags$input(
-                type = "text",
-                id = "access_code",
-                name = "access_code",
-                class = "form-control form-control-lg text-center",
+              textInput(
+                inputId = "access_code",
+                label = NULL,
+                value = "",
                 placeholder = "Enter your access code",
-                style = "font-size: 18px; letter-spacing: 1px;",
-                # Mobile-friendly attributes - these are the key additions
-                autocomplete = "off",
-                autocorrect = "off",
-                autocapitalize = "off",
-                spellcheck = "false",
-                # Additional attributes to prevent mobile issues
-                inputmode = "text",
-                pattern = "[A-Za-z0-9]*"  # Only allow alphanumeric characters
+                width = "100%"
               ),
               div(
                 class = "form-help mt-2",
@@ -280,6 +269,33 @@ ui <- fluidPage(
         )
       ),
       
+      # Conference Type Display
+      div(
+        class = "ssm-card mb-3",
+        div(
+          class = "conference-type-display text-center py-3",
+          div(
+            class = "d-flex align-items-center justify-content-center",
+            div(
+              class = "conference-icon me-3",
+              tags$i(class = "fas fa-calendar-check", style = "font-size: 1.5rem; color: var(--ssm-primary-blue);")
+            ),
+            div(
+              h5(
+                class = "mb-1",
+                style = "font-size: clamp(1rem, 3.5vw, 1.2rem);",
+                textOutput("current_conference_name", inline = TRUE)
+              ),
+              p(
+                class = "text-muted mb-0 small",
+                style = "font-size: clamp(0.8rem, 2.5vw, 0.9rem);",
+                "Current Conference Session"
+              )
+            )
+          )
+        )
+      ),
+      
       # Question Form Card
       div(
         class = "ssm-card",
@@ -320,7 +336,7 @@ ui <- fluidPage(
             )
           ),
           
-          # Question Section
+          # Question Section - Only shows when rotation is selected
           conditionalPanel(
             condition = "input.q_rotation != null && input.q_rotation != ''",
             div(

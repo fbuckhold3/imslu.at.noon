@@ -12,6 +12,7 @@ library(jsonlite)
 library(DT)
 library(lubridate)
 library(shinyjs)
+library(stringi)
 
 # Install imslu from GitHub if not already installed
 if (!require(imres)) {
@@ -23,19 +24,65 @@ if (!require(imres)) {
   library(imres)
 }
 
-# Conference submission time window (St. Louis, MO timezone)
+# ============================================================================
+# DUAL CONFERENCE CONFIGURATION
+# ============================================================================
+
+# Conference submission time windows (St. Louis, MO timezone)
 CONFERENCE_TIMEZONE <- "America/Chicago"
-CONFERENCE_START_TIME <- "11:55"  # 24-hour format HH:MM
-CONFERENCE_END_TIME <- "12:10"    # 24-hour format HH:MM
 CONFERENCE_DAYS <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
 
-# Function to check if current time is within conference window
+# First conference window (SLUH)
+CONFERENCE_1_START_TIME <- "11:55"  # 24-hour format HH:MM
+CONFERENCE_1_END_TIME <- "12:10"    # 24-hour format HH:MM
+CONFERENCE_1_NAME <- "SLUH Conference"
+
+# Second conference window (VA)
+CONFERENCE_2_START_TIME <- "12:25"  # 24-hour format HH:MM
+CONFERENCE_2_END_TIME <- "12:40"    # 24-hour format HH:MM
+CONFERENCE_2_NAME <- "VA Conference"
+
+# ============================================================================
+# ROTATION OPTIONS BY CONFERENCE
+# ============================================================================
+
+# SLUH Conference rotations (11:55-12:10)
+sluh_rotation_choices <- c(
+  "Red" = "1",
+  "Green" = "2", 
+  "White" = "3",
+  "Yellow" = "4",
+  "Diamond" = "5",
+  "Gold" = "6",
+  "MICU" = "7",
+  "Bronze" = "8",
+  "Cardiology" = "9",
+  "Bridge / Acute Care" = "10",
+  "Consults - SLUH" = "11",
+  "Elective / Clinics CSM" = "12"
+)
+
+# VA Conference rotations (12:25-12:40)
+va_rotation_choices <- c(
+  "VA A" = "13",
+  "VA B" = "14",
+  "VA C" = "15",
+  "VA D" = "16",
+  "VA Clinics or Consults" = "17"
+)
+
+# Combined choices for reference (if needed elsewhere)
+all_rotation_choices <- c(sluh_rotation_choices, va_rotation_choices)
+
+# ============================================================================
+# ENHANCED CONFERENCE TIME CHECKING
+# ============================================================================
+
+# Function to check which conference window is active (if any)
 is_conference_time <- function() {
   tryCatch({
-    # Get current time in Chicago timezone (should now be correct)
+    # Get current time in Chicago timezone
     current_time <- Sys.time()
-    
-    # Force timezone conversion to ensure it's in Chicago time
     stl_time <- lubridate::with_tz(current_time, CONFERENCE_TIMEZONE)
     
     # Debug: Print current time information
@@ -49,6 +96,7 @@ is_conference_time <- function() {
     if (!current_day %in% CONFERENCE_DAYS) {
       return(list(
         allowed = FALSE,
+        conference_type = "none",
         message = paste("Conference submissions are only available Monday through Friday.",
                         "Today is", current_day, "- please try again on a weekday.")
       ))
@@ -57,40 +105,89 @@ is_conference_time <- function() {
     # Get current time as HH:MM
     current_hhmm <- format(stl_time, "%H:%M")
     
-    # Check if current time is within window
-    if (current_hhmm >= CONFERENCE_START_TIME && current_hhmm <= CONFERENCE_END_TIME) {
+    # Check SLUH conference window
+    if (current_hhmm >= CONFERENCE_1_START_TIME && current_hhmm <= CONFERENCE_1_END_TIME) {
       return(list(
         allowed = TRUE,
-        message = paste("Conference submission window is open until", CONFERENCE_END_TIME, "CT")
-      ))
-    } else {
-      # Calculate next available time
-      if (current_hhmm < CONFERENCE_START_TIME) {
-        next_time <- paste("today at", CONFERENCE_START_TIME, "AM CT")
-      } else {
-        # After conference time - next opportunity is tomorrow (or Monday if Friday)
-        if (current_day == "Friday") {
-          next_time <- "Monday at 11:55 AM CT"
-        } else {
-          next_time <- "tomorrow at 11:55 AM CT"
-        }
-      }
-      
-      return(list(
-        allowed = FALSE,
-        message = paste("Conference submissions are only available Monday-Friday from 11:55 AM to 12:10 PM CT.",
-                        "Current time:", format(stl_time, "%I:%M %p %Z on %A, %B %d"),
-                        "- Next submission window opens", next_time)
+        conference_type = "sluh",
+        conference_name = CONFERENCE_1_NAME,
+        window_end = CONFERENCE_1_END_TIME,
+        message = paste(CONFERENCE_1_NAME, "submission window is open until", CONFERENCE_1_END_TIME, "CT")
       ))
     }
+    
+    # Check VA conference window
+    if (current_hhmm >= CONFERENCE_2_START_TIME && current_hhmm <= CONFERENCE_2_END_TIME) {
+      return(list(
+        allowed = TRUE,
+        conference_type = "va",
+        conference_name = CONFERENCE_2_NAME,
+        window_end = CONFERENCE_2_END_TIME,
+        message = paste(CONFERENCE_2_NAME, "submission window is open until", CONFERENCE_2_END_TIME, "CT")
+      ))
+    }
+    
+    # Neither window is open - calculate next available time
+    if (current_hhmm < CONFERENCE_1_START_TIME) {
+      next_time <- paste("today at", CONFERENCE_1_START_TIME, "AM CT for", CONFERENCE_1_NAME)
+    } else if (current_hhmm > CONFERENCE_1_END_TIME && current_hhmm < CONFERENCE_2_START_TIME) {
+      next_time <- paste("today at", CONFERENCE_2_START_TIME, "PM CT for", CONFERENCE_2_NAME)
+    } else {
+      # After both conferences - next opportunity is tomorrow (or Monday if Friday)
+      if (current_day == "Friday") {
+        next_time <- "Monday at 11:55 AM CT"
+      } else {
+        next_time <- "tomorrow at 11:55 AM CT"
+      }
+    }
+    
+    return(list(
+      allowed = FALSE,
+      conference_type = "none",
+      message = paste("Conference submissions are available Monday-Friday during two windows:",
+                      paste(CONFERENCE_1_START_TIME, "-", CONFERENCE_1_END_TIME, "CT (SLUH)"),
+                      "and",
+                      paste(CONFERENCE_2_START_TIME, "-", CONFERENCE_2_END_TIME, "CT (VA)."),
+                      "Current time:", format(stl_time, "%I:%M %p %Z on %A, %B %d"),
+                      "- Next submission window opens", next_time)
+    ))
     
   }, error = function(e) {
     cat("Error checking conference time:", e$message, "\n")
     return(list(
       allowed = FALSE,
+      conference_type = "none",
       message = "Unable to verify conference time window. Please try again later."
     ))
   })
+}
+
+# Function to get rotation choices for current conference
+get_current_rotation_choices <- function() {
+  time_check <- is_conference_time()
+  
+  if (!time_check$allowed) {
+    return(c())  # Return empty choices if no conference is active
+  }
+  
+  if (time_check$conference_type == "sluh") {
+    return(sluh_rotation_choices)
+  } else if (time_check$conference_type == "va") {
+    return(va_rotation_choices)
+  } else {
+    return(c())  # Fallback
+  }
+}
+
+# Function to get current conference display name
+get_current_conference_name <- function() {
+  time_check <- is_conference_time()
+  
+  if (time_check$allowed && !is.null(time_check$conference_name)) {
+    return(time_check$conference_name)
+  } else {
+    return("Conference")  # Fallback
+  }
 }
 
 # ============================================================================
@@ -132,35 +229,7 @@ answer_choices <- c(
   "E" = "5"
 )
 
-# Alternative common patterns - uncomment the correct one:
-# answer_choices <- c("A" = "A", "B" = "B", "C" = "C", "D" = "D", "E" = "E")  # If letters are stored directly
-# answer_choices <- c("A" = "0", "B" = "1", "C" = "2", "D" = "3", "E" = "4")  # If zero-indexed numbers
-# ============================================================================
-# ROTATION OPTIONS
-# ============================================================================
-rotation_choices <- c(
-  "Red" = "1",
-  "Green" = "2", 
-  "White" = "3",
-  "Yellow" = "4",
-  "Diamond" = "5",
-  "Gold" = "6",
-  "MICU" = "7",
-  "Bronze" = "8",
-  "Cardiology" = "9",
-  "Bridge / Acute Care" = "10",
-  "Consults - SLUH" = "11",
-  "Elective / Clinics CSM" = "12",
-  "VA A" = "13",
-  "VA B" = "14",
-  "VA C" = "15",
-  "VA D" = "16",
-  "VA Clinics or Consults" = "17"
-)
 
-# Debug: Print rotation choices to console
-cat("Rotation choices loaded:\n")
-print(rotation_choices)
 
 # ============================================================================
 # DATA FUNCTIONS
@@ -204,7 +273,9 @@ get_resident_data <- function() {
   })
 }
 
-submit_question_response <- function(record_id, rotation, answer) {
+# Replace your existing submit_question_response function with this enhanced version:
+
+submit_question_response <- function(record_id, rotation, answer, conference_type = NULL) {
   tryCatch({
     # Get current date in YYYY-MM-DD format
     current_date <- format(Sys.Date(), "%Y-%m-%d")
@@ -214,12 +285,13 @@ submit_question_response <- function(record_id, rotation, answer) {
     cat("Rotation:", rotation, "\n")
     cat("Answer:", answer, "\n")
     cat("Date:", current_date, "\n")
+    cat("Conference Type:", conference_type, "\n")
     
     # Get the next available instance number for this record's questions instrument
     next_instance <- get_next_question_instance(record_id, conf_token, url)
     cat("Next instance number:", next_instance, "\n")
     
-    # Create the data to submit in data.frame format (matching your working pattern)
+    # Create the data to submit in data.frame format
     redcap_data <- data.frame(
       record_id = as.character(record_id),
       redcap_repeat_instrument = "questions",
@@ -231,10 +303,16 @@ submit_question_response <- function(record_id, rotation, answer) {
       stringsAsFactors = FALSE
     )
     
+    # Add conference type to submission data if you want to track it in REDCap
+    # (You would need to add a q_conference_type field to your REDCap project)
+    # if (!is.null(conference_type)) {
+    #   redcap_data$q_conference_type <- conference_type
+    # }
+    
     cat("REDCap submission data:\n")
     print(redcap_data)
     
-    # Submit to REDCap using the same pattern as your working functions
+    # Submit to REDCap
     result <- httr::POST(
       url = url,
       body = list(
@@ -255,7 +333,7 @@ submit_question_response <- function(record_id, rotation, answer) {
       stop("Failed to submit response to REDCap. Status: ", httr::status_code(result), " Response: ", response_text)
     }
     
-    cat("✅ Successfully submitted question response for record:", record_id, "\n")
+    cat("✅ Successfully submitted", conference_type, "conference response for record:", record_id, "\n")
     return(TRUE)
     
   }, error = function(e) {

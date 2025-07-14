@@ -1,4 +1,4 @@
-# global.R - Conference Attendance Tracking App
+# global.R - Conference Attendance Tracking App (Updated with Word for the Day)
 
 # ============================================================================
 # LIBRARIES
@@ -229,8 +229,6 @@ answer_choices <- c(
   "E" = "5"
 )
 
-
-
 # ============================================================================
 # DATA FUNCTIONS
 # ============================================================================
@@ -273,9 +271,8 @@ get_resident_data <- function() {
   })
 }
 
-# Replace your existing submit_question_response function with this enhanced version:
-
-submit_question_response <- function(record_id, rotation, answer, conference_type = NULL) {
+# Enhanced submit_question_response function with Word for the Day support:
+submit_question_response <- function(record_id, rotation, answer, word, conference_type = NULL) {
   tryCatch({
     # Get current date in YYYY-MM-DD format
     current_date <- format(Sys.Date(), "%Y-%m-%d")
@@ -284,6 +281,7 @@ submit_question_response <- function(record_id, rotation, answer, conference_typ
     cat("Record ID:", record_id, "\n")
     cat("Rotation:", rotation, "\n")
     cat("Answer:", answer, "\n")
+    cat("Word for the Day:", word, "\n")
     cat("Date:", current_date, "\n")
     cat("Conference Type:", conference_type, "\n")
     
@@ -299,6 +297,7 @@ submit_question_response <- function(record_id, rotation, answer, conference_typ
       q_date = current_date,
       q_rotation = as.character(rotation),
       q_answer = as.character(answer),
+      q_word = as.character(word),  # Add the word for the day field
       questions_complete = "2",
       stringsAsFactors = FALSE
     )
@@ -334,6 +333,7 @@ submit_question_response <- function(record_id, rotation, answer, conference_typ
     }
     
     cat("✅ Successfully submitted", conference_type, "conference response for record:", record_id, "\n")
+    cat("   Word for the day:", word, "\n")
     return(TRUE)
     
   }, error = function(e) {

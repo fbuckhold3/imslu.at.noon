@@ -1,4 +1,4 @@
-# server.R - Conference Attendance Tracking App
+# server.R - Conference Attendance Tracking App (Updated with Word for the Day)
 
 server <- function(input, output, session) {
   
@@ -252,7 +252,6 @@ server <- function(input, output, session) {
   }, ignoreInit = TRUE)
   
   # Enhanced access code submission handler
-  # Replace your existing observeEvent(input$submit_access, ...) with this:
   observeEvent(input$submit_access, {
     req(input$access_code)
     
@@ -315,6 +314,18 @@ server <- function(input, output, session) {
   })
   
   # ============================================================================
+  # WORD INPUT HANDLING
+  # ============================================================================
+  
+  # Clean up word input for better consistency
+  observeEvent(input$q_word, {
+    if (!is.null(input$q_word) && nchar(input$q_word) > 0) {
+      # Clear errors when typing
+      values$error_message <- NULL
+    }
+  }, ignoreInit = TRUE)
+  
+  # ============================================================================
   # PARTICIPANT INFO DISPLAY
   # ============================================================================
   
@@ -341,13 +352,14 @@ server <- function(input, output, session) {
   })
   
   # ============================================================================
-  # RESPONSE SUBMISSION
+  # RESPONSE SUBMISSION (UPDATED FOR WORD FOR THE DAY)
   # ============================================================================
   
-  # Enhanced response submission with conference type logging
+  # Enhanced response submission with word for the day and conference type logging
   observeEvent(input$submit_response, {
     req(values$participant)
     req(input$q_rotation)
+    req(input$q_word)  # Now required
     req(input$q_answer)
     
     # Double-check time window before submission
@@ -359,11 +371,19 @@ server <- function(input, output, session) {
     
     values$error_message <- NULL
     
-    # Submit to REDCap with conference context
+    # Validate word input (basic cleanup)
+    word_cleaned <- trimws(input$q_word)
+    if (nchar(word_cleaned) == 0) {
+      values$error_message <- "Please enter a word for the day before submitting."
+      return()
+    }
+    
+    # Submit to REDCap with word for the day and conference context
     success <- submit_question_response(
       record_id = values$participant$record_id,
       rotation = input$q_rotation,
       answer = input$q_answer,
+      word = word_cleaned,  # Pass the cleaned word
       conference_type = time_check$conference_type  # Pass conference type for logging
     )
     
@@ -371,6 +391,7 @@ server <- function(input, output, session) {
       values$current_step <- "success"
       # Reset form values
       updateSelectizeInput(session, "q_rotation", selected = character(0))
+      updateTextInput(session, "q_word", value = "")
       updateRadioButtons(session, "q_answer", selected = character(0))
     } else {
       values$error_message <- "Failed to submit response. Please try again."
@@ -399,6 +420,7 @@ server <- function(input, output, session) {
     # Reset all inputs
     updateTextInput(session, "access_code", value = "")
     updateSelectizeInput(session, "q_rotation", selected = character(0))
+    updateTextInput(session, "q_word", value = "")
     updateRadioButtons(session, "q_answer", selected = character(0))
   })
 }

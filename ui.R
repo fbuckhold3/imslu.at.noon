@@ -1,4 +1,4 @@
-# ui.R - Conference Attendance Tracking App
+# ui.R - Conference Attendance Tracking App (Updated with Word for the Day)
 
 ui <- fluidPage(
   theme = bs_theme(
@@ -311,7 +311,7 @@ ui <- fluidPage(
           class = "step-header",
           h3(
             style = "font-size: clamp(1.2rem, 5vw, 1.5rem);",
-            "Conference Question"
+            "Conference Questions"
           )
         ),
         div(
@@ -344,9 +344,46 @@ ui <- fluidPage(
             )
           ),
           
-          # Question Section - Only shows when rotation is selected
+          # Word for the Day Section - Shows when rotation is selected
           conditionalPanel(
             condition = "input.q_rotation != null && input.q_rotation != ''",
+            div(
+              class = "word-section mb-4",
+              hr(),
+              div(
+                class = "form-group",
+                tags$label(
+                  "Word for the Day:",
+                  class = "form-label required",
+                  style = "font-size: clamp(1rem, 3.5vw, 1.1rem);",
+                  `for` = "q_word"
+                ),
+                tags$input(
+                  id = "q_word",
+                  type = "text",
+                  class = "form-control",
+                  placeholder = "Enter today's medical term or word",
+                  value = "",
+                  # Mobile-optimized attributes
+                  autocomplete = "off",
+                  autocorrect = "on",
+                  autocapitalize = "words",
+                  spellcheck = "true",
+                  inputmode = "text",
+                  style = "font-size: 16px; padding: 12px 16px;"
+                ),
+                div(
+                  class = "form-help mt-2",
+                  style = "font-size: clamp(0.8rem, 2.5vw, 0.9rem);",
+                  "Enter a medical term, concept, or word that was discussed or learned today."
+                )
+              )
+            )
+          ),
+          
+          # Question Section - Only shows when both rotation and word are entered
+          conditionalPanel(
+            condition = "input.q_rotation != null && input.q_rotation != '' && input.q_word != null && input.q_word != ''",
             div(
               class = "question-section",
               hr(),

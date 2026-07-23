@@ -1,4 +1,4 @@
-# ui.R - Conference Attendance Tracking App (Updated with Word for the Day)
+# ui.R - Conference Attendance Tracking App
 
 ui <- fluidPage(
   theme = bs_theme(
@@ -24,7 +24,7 @@ ui <- fluidPage(
     tags$meta(name = "theme-color", content = "#1e40af"),
     
     # Page title
-    tags$title("SSM Health Conference Attendance"),
+    tags$title("Conference Attendance App"),
     
     # Mobile-specific styles
     tags$style(HTML("
@@ -124,7 +124,7 @@ ui <- fluidPage(
         h1(
           class = "navbar-brand mb-0",
           style = "font-size: clamp(1.2rem, 4vw, 1.75rem);",
-          "SSM Health Conference Attendance"
+          "Conference Attendance App"
         ),
         div(
           class = "header-info text-end",
@@ -141,38 +141,7 @@ ui <- fluidPage(
   # Main Content
   div(
     class = "container mt-4",
-    
-    # Time Restriction Message
-    conditionalPanel(
-      condition = "output.show_time_restriction",
-      div(
-        class = "ssm-card mb-4",
-        div(
-          class = "time-restriction-content text-center py-5",
-          div(
-            class = "restriction-icon mb-4",
-            tags$i(class = "fas fa-clock", style = "font-size: clamp(3rem, 8vw, 4rem); color: var(--ssm-warning-orange);")
-          ),
-          h3(
-            class = "text-warning mb-3",
-            style = "font-size: clamp(1.2rem, 5vw, 1.5rem);",
-            "Conference Submission Window Closed"
-          ),
-          div(
-            class = "restriction-message mb-4",
-            style = "font-size: clamp(0.9rem, 3vw, 1rem);",
-            textOutput("time_restriction_message")
-          ),
-          div(
-            class = "current-time-display",
-            style = "font-size: clamp(0.9rem, 3vw, 1rem);",
-            tags$strong("Current Time: "),
-            textOutput("current_time_display", inline = TRUE)
-          )
-        )
-      )
-    ),
-    
+
     # Access Code Step
     conditionalPanel(
       condition = "output.show_access_step",
@@ -277,33 +246,6 @@ ui <- fluidPage(
         )
       ),
       
-      # Conference Type Display
-      div(
-        class = "ssm-card mb-3",
-        div(
-          class = "conference-type-display text-center py-3",
-          div(
-            class = "d-flex align-items-center justify-content-center",
-            div(
-              class = "conference-icon me-3",
-              tags$i(class = "fas fa-calendar-check", style = "font-size: 1.5rem; color: var(--ssm-primary-blue);")
-            ),
-            div(
-              h5(
-                class = "mb-1",
-                style = "font-size: clamp(1rem, 3.5vw, 1.2rem);",
-                textOutput("current_conference_name", inline = TRUE)
-              ),
-              p(
-                class = "text-muted mb-0 small",
-                style = "font-size: clamp(0.8rem, 2.5vw, 0.9rem);",
-                "Current Conference Session"
-              )
-            )
-          )
-        )
-      ),
-      
       # Question Form Card
       div(
         class = "ssm-card",
@@ -316,74 +258,58 @@ ui <- fluidPage(
         ),
         div(
           class = "step-content p-4",
-          
-          # Rotation Selection
+
+          # Conference Type Selection
           div(
             class = "form-group mb-4",
             tags$label(
-              "Current Rotation:",
+              "Which conference are you at?",
               class = "form-label required",
               style = "font-size: clamp(1rem, 3.5vw, 1.1rem);"
             ),
-            selectizeInput(
-              "q_rotation",
+            selectInput(
+              "q_conference_type",
               NULL,
-              choices = NULL,  # Start with empty choices
-              selected = NULL,
-              options = list(
-                placeholder = "Search or select your rotation...",
-                searchField = 'text',
-                maxOptions = 50,
-                create = FALSE
-              )
-            ),
-            div(
-              class = "form-help mt-2",
-              style = "font-size: clamp(0.8rem, 2.5vw, 0.9rem);",
-              "Please take the time to accurately display the rotation you are on. If you have questions, please ask the Chiefs or Dr. B."
+              choices = c("-- select --" = "", conference_type_choices),
+              selected = character(0),
+              selectize = FALSE
             )
           ),
-          
-          # Word for the Day Section - Shows when rotation is selected
+
+          # Rotation Selection - hidden entirely for Afternoon School
           conditionalPanel(
-            condition = "input.q_rotation != null && input.q_rotation != ''",
+            condition = "input.q_conference_type != null && input.q_conference_type != '' && input.q_conference_type != '3'",
             div(
-              class = "word-section mb-4",
-              hr(),
-              div(
-                class = "form-group",
-                tags$label(
-                  "Word for the Day:",
-                  class = "form-label required",
-                  style = "font-size: clamp(1rem, 3.5vw, 1.1rem);",
-                  `for` = "q_word"
-                ),
-                tags$input(
-                  id = "q_word",
-                  type = "text",
-                  class = "form-control",
-                  placeholder = "Enter today's medical term or word",
-                  value = "",
-                  # Mobile-optimized attributes
-                  autocomplete = "off",
-                  autocorrect = "on",
-                  autocapitalize = "words",
-                  spellcheck = "true",
-                  inputmode = "text",
-                  style = "font-size: 16px; padding: 12px 16px;"
-                ),
-                div(
-                  class = "form-help mt-2",
-                  style = "font-size: clamp(0.8rem, 2.5vw, 0.9rem);",
-                  "Enter a medical term, concept, or word that was discussed or learned today."
+              class = "form-group mb-4",
+              tags$label(
+                "Current Rotation:",
+                class = "form-label required",
+                style = "font-size: clamp(1rem, 3.5vw, 1.1rem);"
+              ),
+              selectizeInput(
+                "q_rotation",
+                NULL,
+                choices = NULL,  # Populated reactively based on conference type
+                selected = NULL,
+                options = list(
+                  placeholder = "Search or select your rotation...",
+                  searchField = 'text',
+                  maxOptions = 50,
+                  create = FALSE
                 )
+              ),
+              div(
+                class = "form-help mt-2",
+                style = "font-size: clamp(0.8rem, 2.5vw, 0.9rem);",
+                "Please take the time to accurately display the rotation you are on. If you have questions, please ask the Chiefs or Dr. B."
               )
             )
           ),
-          
-          # Question Section - Only shows when both rotation and word are entered
+
+          # Question Section - shows once conference type (and rotation, if
+          # required) is selected
           conditionalPanel(
-            condition = "input.q_rotation != null && input.q_rotation != '' && input.q_word != null && input.q_word != ''",
+            condition = "input.q_conference_type != null && input.q_conference_type != '' && (input.q_conference_type == '3' || (input.q_rotation != null && input.q_rotation != ''))",
             div(
               class = "question-section",
               hr(),
@@ -399,7 +325,7 @@ ui <- fluidPage(
                   NULL,
                   choices = c(
                     "A" = "1",
-                    "B" = "2", 
+                    "B" = "2",
                     "C" = "3",
                     "D" = "4",
                     "E" = "5"
@@ -409,12 +335,18 @@ ui <- fluidPage(
                 )
               ),
               div(
-                class = "mt-4 d-grid",
+                class = "mt-4 d-grid gap-2",
                 actionButton(
                   "submit_response",
                   "Submit Response",
                   class = "btn btn-success btn-lg fw-bold",
                   style = "font-size: clamp(1rem, 4vw, 1.2rem);"
+                ),
+                actionButton(
+                  "mark_attending_only",
+                  "I'm not sure — just mark me as attending",
+                  class = "btn btn-outline-secondary",
+                  style = "font-size: clamp(0.85rem, 3vw, 0.95rem);"
                 )
               )
             )

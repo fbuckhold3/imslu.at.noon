@@ -645,37 +645,6 @@
       ],
       "Hash": "ade531519694081d91036b509eb30594"
     },
-    "imres": {
-      "Package": "imres",
-      "Version": "0.1.0",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "imres",
-      "RemoteUsername": "fbuckhold3",
-      "RemoteSha": "722178849552d7409aeb43652152db1b72540c39",
-      "Requirements": [
-        "DT",
-        "REDCapR",
-        "bslib",
-        "devtools",
-        "dplyr",
-        "htmltools",
-        "httr",
-        "jsonlite",
-        "lubridate",
-        "pkgdown",
-        "reactable",
-        "readr",
-        "roxygen2",
-        "shiny",
-        "stringr",
-        "testthat",
-        "tidyr",
-        "usethis"
-      ],
-      "Hash": "fb4e2da3cdaa6914bbf1842aca04a8e0"
-    },
     "ini": {
       "Package": "ini",
       "Version": "0.3.1",

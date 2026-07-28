@@ -1504,36 +1504,6 @@
         "Built": "R 4.3.0; ; 2025-03-27 04:46:38 UTC; unix"
       }
     },
-    "imres": {
-      "Source": "github",
-      "Repository": null,
-      "description": {
-        "Type": "Package",
-        "Package": "imres",
-        "Title": "IM Residency Data Management Support Functions",
-        "Version": "0.1.0",
-        "Author": "Fred Buckhold",
-        "Maintainer": "Fred Buckhold <fred.buckhold@health.slu.edu>",
-        "Description": "This serves as a support package for various shiny apps intending for a residency data management platform. This is initially to be used for the local residency with a conception towards scale. Many functions will be used in various dashboards but in this package form to reduce code complexity with uploading into shiny apps. ",
-        "License": "MIT",
-        "Imports": "bslib, devtools, dplyr, DT, httr, jsonlite, lubridate,\npkgdown, htmltools, reactable, readr, REDCapR, roxygen2, shiny,\nstringr, testthat, tidyr, usethis",
-        "Encoding": "UTF-8",
-        "RoxygenNote": "7.3.2",
-        "RemoteType": "github",
-        "RemoteHost": "api.github.com",
-        "RemoteRepo": "imres",
-        "RemoteUsername": "fbuckhold3",
-        "RemoteRef": "HEAD",
-        "RemoteSha": "722178849552d7409aeb43652152db1b72540c39",
-        "GithubRepo": "imres",
-        "GithubUsername": "fbuckhold3",
-        "GithubRef": "HEAD",
-        "GithubSHA1": "722178849552d7409aeb43652152db1b72540c39",
-        "NeedsCompilation": "no",
-        "Packaged": "2025-06-29 18:52:47 UTC; fredbuckhold",
-        "Built": "R 4.3.3; ; 2025-06-29 18:52:47 UTC; unix"
-      }
-    },
     "ini": {
       "Source": "CRAN",
       "Repository": "https://packagemanager.posit.co/cran/latest",

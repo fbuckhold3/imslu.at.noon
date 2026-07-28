@@ -209,43 +209,30 @@ ui <- fluidPage(
         div(
           class = "participant-card",
           div(
-            class = "d-flex align-items-center justify-content-between mb-3 flex-wrap",
+            class = "d-flex align-items-center mb-2 mb-md-0",
             div(
-              class = "d-flex align-items-center mb-2 mb-md-0",
-              div(
-                class = "participant-icon me-3",
-                tags$i(class = "fas fa-user-md", style = "font-size: clamp(2rem, 6vw, 2.5rem); color: var(--ssm-primary-blue);")
-              ),
-              div(
-                h4(
-                  class = "participant-name mb-1",
-                  style = "font-size: clamp(1.1rem, 4vw, 1.3rem);",
-                  textOutput("participant_name", inline = TRUE)
-                ),
-                p(
-                  class = "text-muted mb-0",
-                  style = "font-size: clamp(0.8rem, 2.5vw, 0.9rem);",
-                  "Conference Participant"
-                )
-              )
+              class = "participant-icon me-3",
+              tags$i(class = "fas fa-user-md", style = "font-size: clamp(2rem, 6vw, 2.5rem); color: var(--ssm-primary-blue);")
             ),
             div(
-              class = "conference-date text-end",
-              div(
-                class = "fw-bold text-primary",
-                style = "font-size: clamp(0.9rem, 3vw, 1rem);",
-                format(lubridate::with_tz(Sys.time(), "America/Chicago"), "%B %d, %Y")
+              h4(
+                class = "participant-name mb-1",
+                style = "font-size: clamp(1.1rem, 4vw, 1.3rem);",
+                textOutput("participant_name", inline = TRUE)
               ),
-              div(
-                class = "text-muted small",
-                style = "font-size: clamp(0.7rem, 2vw, 0.8rem);",
-                "Conference Date"
+              p(
+                class = "text-muted mb-0",
+                style = "font-size: clamp(0.8rem, 2.5vw, 0.9rem);",
+                "Conference Participant"
               )
             )
           )
         )
       ),
-      
+
+      # Attendance overview: percentage since July 1 + calendar heatmap
+      uiOutput("attendance_overview"),
+
       # Question Form Card
       div(
         class = "ssm-card",
@@ -258,6 +245,24 @@ ui <- fluidPage(
         ),
         div(
           class = "step-content p-4",
+
+          # Conference Date - defaults to today; pick an earlier date to
+          # log attendance you weren't able to submit live
+          div(
+            class = "form-group mb-4",
+            tags$label(
+              "Conference Date:",
+              class = "form-label required",
+              style = "font-size: clamp(1rem, 3.5vw, 1.1rem);"
+            ),
+            dateInput(
+              "q_date",
+              NULL,
+              value = Sys.Date(),
+              max = Sys.Date(),
+              width = "200px"
+            )
+          ),
 
           # Conference Type Selection
           div(
@@ -306,10 +311,10 @@ ui <- fluidPage(
             )
           ),
 
-          # Question Section - shows once conference type (and rotation, if
-          # required) is selected
+          # Quiz Section - only for today's date, once conference type (and
+          # rotation, if required) is selected
           conditionalPanel(
-            condition = "input.q_conference_type != null && input.q_conference_type != '' && (input.q_conference_type == '3' || (input.q_rotation != null && input.q_rotation != ''))",
+            condition = "output.is_today && input.q_conference_type != null && input.q_conference_type != '' && (input.q_conference_type == '3' || (input.q_rotation != null && input.q_rotation != ''))",
             div(
               class = "question-section",
               hr(),
@@ -347,6 +352,24 @@ ui <- fluidPage(
                   "I'm not sure — just mark me as attending",
                   class = "btn btn-outline-secondary",
                   style = "font-size: clamp(0.85rem, 3vw, 0.95rem);"
+                )
+              )
+            )
+          ),
+
+          # Past-date section - no quiz, just log the attendance
+          conditionalPanel(
+            condition = "!output.is_today && input.q_conference_type != null && input.q_conference_type != '' && (input.q_conference_type == '3' || (input.q_rotation != null && input.q_rotation != ''))",
+            div(
+              class = "question-section",
+              hr(),
+              div(
+                class = "mt-2 d-grid",
+                actionButton(
+                  "submit_past",
+                  "Log Attendance",
+                  class = "btn btn-success btn-lg fw-bold",
+                  style = "font-size: clamp(1rem, 4vw, 1.2rem);"
                 )
               )
             )

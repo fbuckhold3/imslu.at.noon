@@ -9,8 +9,26 @@ server <- function(input, output, session) {
   values <- reactiveValues(
     current_step = "access",
     participant = NULL,
-    error_message = NULL
+    error_message = NULL,
+    my_history = NULL   # this resident's "questions" rows, fetched on login
   )
+
+  # Rows saved earlier in this login (not yet reflected in values$my_history,
+  # which is only refetched on login) — merged in for display so the
+  # overview updates immediately after a submit.
+  local_new_rows <- reactiveVal(NULL)
+
+  display_history <- reactive({
+    base  <- values$my_history
+    extra <- local_new_rows()
+    if (is.null(base) && is.null(extra)) return(NULL)
+    if (is.null(base))  return(extra)
+    if (is.null(extra)) return(base)
+    cols <- union(names(base), names(extra))
+    for (cn in setdiff(cols, names(base)))  base[[cn]]  <- NA
+    for (cn in setdiff(cols, names(extra))) extra[[cn]] <- NA
+    rbind(base[cols], extra[cols])
+  })
   
   # ============================================================================
   # MOBILE INPUT CLEANING FUNCTIONS
@@ -173,10 +191,17 @@ server <- function(input, output, session) {
       values$participant <- participant
       values$current_step <- "question"
 
+      # Shared-kiosk app — a different resident may have just used this same
+      # browser session, so always refetch (never reuse) the previous
+      # participant's history.
+      values$my_history <- get_resident_questions_history(participant$record_id, conf_token, url)
+      local_new_rows(NULL)
+
       # Clear the access code input
       updateTextInput(session, "access_code", value = "")
 
-      # Reset conference-type/rotation/answer selections for a fresh entry
+      # Reset date/conference-type/rotation/answer selections for a fresh entry
+      updateDateInput(session, "q_date", value = Sys.Date())
       updateSelectInput(session, "q_conference_type", selected = character(0))
       updateSelectizeInput(session, "q_rotation", choices = c(), selected = character(0))
       updateRadioButtons(session, "q_answer", selected = character(0))
@@ -216,7 +241,55 @@ server <- function(input, output, session) {
     }
     return("")
   })
-  
+
+  # ============================================================================
+  # ATTENDANCE OVERVIEW (percentage + calendar heatmap)
+  # ============================================================================
+
+  output$attendance_overview <- renderUI({
+    req(values$participant)
+    today <- Sys.Date()
+    july1 <- academic_year_start(today)
+    all_days <- seq(july1, today, by = "day")
+    weekday_seq <- all_days[!weekdays(all_days) %in% c("Saturday", "Sunday")]
+
+    df <- display_history()
+    attended_dates  <- as.Date(character(0))
+    afternoon_count <- 0L
+    if (!is.null(df) && nrow(df) > 0) {
+      d <- df
+      d$.date <- suppressWarnings(as.Date(as.character(d$q_date)))
+      d <- d[!is.na(d$.date) & d$.date >= july1 & d$.date <= today, , drop = FALSE]
+      qual <- d[as.character(d$q_conference_type) %in% percentage_conference_types, , drop = FALSE]
+      attended_dates  <- unique(qual$.date)
+      afternoon_count <- sum(as.character(d$q_conference_type) == "3", na.rm = TRUE)
+    }
+    n_weekdays <- length(weekday_seq)
+    pct <- if (n_weekdays > 0) round(length(attended_dates) / n_weekdays * 100) else 0
+
+    div(class = "ssm-card mb-4",
+      div(class = "step-content p-4",
+        div(class = "d-flex flex-wrap gap-4 align-items-end mb-3",
+          div(
+            div(style = "font-size:0.78rem; color:#6c757d;",
+                paste0("Noon Conference + Grand Rounds — since ", format(july1, "%b %d"))),
+            div(style = "font-size:1.8rem; font-weight:700; color:var(--ssm-primary-blue); line-height:1.2;",
+              paste0(pct, "%"),
+              tags$span(style = "font-size:0.85rem; font-weight:400; color:#6c757d; margin-left:6px;",
+                        paste0("(", length(attended_dates), " of ", n_weekdays, " weekdays)")))
+          ),
+          div(
+            div(style = "font-size:0.78rem; color:#6c757d;",
+                paste0("Afternoon School — since ", format(july1, "%b %d"))),
+            div(style = "font-size:1.8rem; font-weight:700; color:var(--ssm-primary-blue); line-height:1.2;",
+                afternoon_count)
+          )
+        ),
+        build_attendance_heatmap(attended_dates, today)
+      )
+    )
+  })
+
   # ============================================================================
   # CONFERENCE TYPE -> ROTATION CHOICES
   # ============================================================================
@@ -232,30 +305,59 @@ server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   # ============================================================================
+  # DATE -> QUIZ VISIBILITY (server-computed so it can't go stale like a
+  # baked-in JS date string would on a long-running deployment)
+  # ============================================================================
+
+  output$is_today <- reactive({
+    req(input$q_date)
+    identical(input$q_date, Sys.Date())
+  })
+  outputOptions(output, "is_today", suspendWhenHidden = FALSE)
+
+  # ============================================================================
   # RESPONSE SUBMISSION
   # ============================================================================
 
-  # Shared handler for both "Submit Response" and "I'm not sure" — the only
-  # difference is whether an answer is required/passed.
+  # Shared handler for "Submit Response", "I'm not sure", and the past-date
+  # "Log Attendance" button — the only difference is whether an answer is
+  # required/passed (past-date entries never have a quiz answer).
   do_submit_response <- function(answer) {
     req(values$participant)
     req(input$q_conference_type)
+    req(input$q_date)
 
     needs_rotation <- length(rotation_choices_for_conference(input$q_conference_type)) > 0
     if (needs_rotation) req(input$q_rotation)
 
     values$error_message <- NULL
 
-    success <- submit_question_response(
+    result <- submit_question_response(
       record_id = values$participant$record_id,
       conference_type = input$q_conference_type,
       rotation = if (needs_rotation) input$q_rotation else NULL,
-      answer = answer
+      answer = answer,
+      date = input$q_date
     )
 
-    if (success) {
+    if (isTRUE(result$success)) {
       values$current_step <- "success"
+
+      # Reflect the new entry immediately in the attendance overview
+      new_row <- data.frame(
+        record_id = as.character(values$participant$record_id),
+        redcap_repeat_instrument = "questions",
+        redcap_repeat_instance = as.character(result$instance),
+        q_date = result$date,
+        q_conference_type = as.character(input$q_conference_type),
+        q_rotation = if (needs_rotation) as.character(input$q_rotation) else "",
+        q_entry_timestamp = result$entry_timestamp,
+        stringsAsFactors = FALSE
+      )
+      local_new_rows(rbind(local_new_rows(), new_row))
+
       # Reset form values
+      updateDateInput(session, "q_date", value = Sys.Date())
       updateSelectInput(session, "q_conference_type", selected = character(0))
       updateSelectizeInput(session, "q_rotation", choices = c(), selected = character(0))
       updateRadioButtons(session, "q_answer", selected = character(0))
@@ -270,6 +372,10 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$mark_attending_only, {
+    do_submit_response(NULL)
+  })
+
+  observeEvent(input$submit_past, {
     do_submit_response(NULL)
   })
   
@@ -290,9 +396,12 @@ server <- function(input, output, session) {
     values$current_step <- "access"
     values$participant <- NULL
     values$error_message <- NULL
+    values$my_history <- NULL
+    local_new_rows(NULL)
 
     # Reset all inputs
     updateTextInput(session, "access_code", value = "")
+    updateDateInput(session, "q_date", value = Sys.Date())
     updateSelectInput(session, "q_conference_type", selected = character(0))
     updateSelectizeInput(session, "q_rotation", choices = c(), selected = character(0))
     updateRadioButtons(session, "q_answer", selected = character(0))

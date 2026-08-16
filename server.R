@@ -273,7 +273,7 @@ server <- function(input, output, session) {
           div(
             div(style = "font-size:0.78rem; color:#6c757d;",
                 paste0("Noon Conference + Grand Rounds — since ", format(july1, "%b %d"))),
-            div(style = "font-size:1.8rem; font-weight:700; color:var(--ssm-primary-blue); line-height:1.2;",
+            div(style = "font-size:1.8rem; font-weight:700; color:var(--roundsui-accent); line-height:1.2;",
               paste0(pct, "%"),
               tags$span(style = "font-size:0.85rem; font-weight:400; color:#6c757d; margin-left:6px;",
                         paste0("(", length(attended_dates), " of ", n_weekdays, " weekdays)")))
@@ -281,7 +281,7 @@ server <- function(input, output, session) {
           div(
             div(style = "font-size:0.78rem; color:#6c757d;",
                 paste0("Afternoon School — since ", format(july1, "%b %d"))),
-            div(style = "font-size:1.8rem; font-weight:700; color:var(--ssm-primary-blue); line-height:1.2;",
+            div(style = "font-size:1.8rem; font-weight:700; color:var(--roundsui-accent); line-height:1.2;",
                 afternoon_count)
           )
         ),

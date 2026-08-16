@@ -1,18 +1,22 @@
 # ui.R - Conference Attendance Tracking App
 
 ui <- fluidPage(
-  theme = bs_theme(
-    version = 5,
-    base_font = font_google("Inter"),
-    heading_font = font_google("Inter", wght = 600)
-  ),
-  
+  theme = roundsui::create_roundsui_theme(base_font = "Inter", heading_font = "Inter"),
+
   # Mobile-optimized head section
   tags$head(
     useShinyjs(),
-    
+
+    # roundsui's own CSS - conference-app.css (recolored onto --roundsui-*
+    # tokens) needs this loaded first.
+    roundsui::load_roundsui_styles(),
+
     # CSS and Font Awesome
-    tags$link(rel = "stylesheet", type = "text/css", href = "www/conference-app.css"),
+    # Pre-existing bug fix, unrelated to the roundsui recolor: this was
+    # "www/conference-app.css" - Shiny serves the www/ directory's contents
+    # at the site root, not under a /www/ prefix, so that path 404s under a
+    # plain shiny::runApp(). Confirmed via direct fetch during verification.
+    tags$link(rel = "stylesheet", type = "text/css", href = "conference-app.css"),
     tags$link(rel = "stylesheet", href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"),
     
     # Mobile viewport and app settings
@@ -212,7 +216,7 @@ ui <- fluidPage(
             class = "d-flex align-items-center mb-2 mb-md-0",
             div(
               class = "participant-icon me-3",
-              tags$i(class = "fas fa-user-md", style = "font-size: clamp(2rem, 6vw, 2.5rem); color: var(--ssm-primary-blue);")
+              tags$i(class = "fas fa-user-md", style = "font-size: clamp(2rem, 6vw, 2.5rem); color: var(--roundsui-accent);")
             ),
             div(
               h4(
@@ -387,7 +391,7 @@ ui <- fluidPage(
           class = "success-content py-5",
           div(
             class = "success-icon mb-4",
-            tags$i(class = "fas fa-check-circle", style = "font-size: clamp(3rem, 8vw, 4rem); color: var(--ssm-success-green);")
+            tags$i(class = "fas fa-check-circle", style = "font-size: clamp(3rem, 8vw, 4rem); color: var(--roundsui-success);")
           ),
           h3(
             class = "text-success mb-3",

@@ -233,9 +233,7 @@ get_resident_data <- function() {
 }
 
 # Full "questions" history for one resident — used to build their
-# attendance overview (percentage + heatmap). Separate from
-# get_next_question_instance() below, which stays a lean instance-only
-# query since it's called on every submit and needs to stay fast.
+# attendance overview (percentage + heatmap).
 get_resident_questions_history <- function(record_id, token, url) {
   tryCatch({
     response <- httr::POST(
@@ -283,70 +281,31 @@ get_resident_questions_history <- function(record_id, token, url) {
 #                   "I'm not sure — just mark me as attending"
 # date            : Date to log the entry under (defaults to today; a past
 #                   date is a resident-initiated backfill)
-# Returns list(success, instance, entry_timestamp) on success, list(success=FALSE) on failure.
+# Returns list(success, instance, entry_timestamp, date) on success, and
+# list(success = FALSE, message) on failure.
+#
+# Writes through amiontools::save_attendance_entry() (2026-10-25), the same
+# path ind.dash and resident.digest use. It reads the next instance live and
+# writes nothing if that read fails — get_next_question_instance() below
+# fell back to instance 1 on a failed read, which (writes overwrite) could
+# replace a resident's first entry of the year.
 submit_question_response <- function(record_id, conference_type, rotation = NULL, answer = NULL, date = Sys.Date()) {
-  tryCatch({
-    current_date <- format(date, "%Y-%m-%d")
-    entry_timestamp <- format(lubridate::with_tz(Sys.time(), CONFERENCE_TIMEZONE), "%Y-%m-%d %H:%M:%S")
-
-    cat("=== SUBMITTING QUESTION RESPONSE ===\n")
-    cat("Record ID:", record_id, "\n")
-    cat("Conference Type:", conference_type, "\n")
-    cat("Rotation:", rotation, "\n")
-    cat("Answer:", answer, "\n")
-    cat("Date:", current_date, "\n")
-    cat("Entry Timestamp:", entry_timestamp, "\n")
-
-    # Get the next available instance number for this record's questions instrument
-    next_instance <- get_next_question_instance(record_id, conf_token, url)
-    cat("Next instance number:", next_instance, "\n")
-
-    # Create the data to submit in data.frame format
-    redcap_data <- data.frame(
-      record_id = as.character(record_id),
-      redcap_repeat_instrument = "questions",
-      redcap_repeat_instance = as.character(next_instance),
-      q_date = current_date,
-      q_conference_type = as.character(conference_type),
-      q_rotation = if (is.null(rotation)) "" else as.character(rotation),
-      q_answer = if (is.null(answer)) "" else as.character(answer),
-      q_entry_timestamp = entry_timestamp,
-      questions_complete = "2",
-      stringsAsFactors = FALSE
-    )
-
-    cat("REDCap submission data:\n")
-    print(redcap_data)
-    
-    # Submit to REDCap
-    result <- httr::POST(
-      url = url,
-      body = list(
-        token = conf_token,
-        content = "record",
-        format = "json",
-        type = "flat",
-        data = jsonlite::toJSON(redcap_data, auto_unbox = TRUE)
-      ),
-      encode = "form"
-    )
-    
-    response_text <- httr::content(result, "text")
-    cat("REDCap response status:", httr::status_code(result), "\n")
-    cat("REDCap response:", response_text, "\n")
-    
-    if (httr::status_code(result) != 200) {
-      stop("Failed to submit response to REDCap. Status: ", httr::status_code(result), " Response: ", response_text)
-    }
-    
-    cat("✅ Successfully submitted", conference_type, "conference response for record:", record_id, "\n")
-    return(list(success = TRUE, instance = next_instance, entry_timestamp = entry_timestamp,
-                date = current_date))
-
-  }, error = function(e) {
-    cat("❌ Error submitting response:", e$message, "\n")
-    return(list(success = FALSE))
-  })
+  result <- amiontools::save_attendance_entry(
+    record_id       = record_id,
+    date            = date,
+    conference_type = conference_type,
+    rotation        = rotation,
+    answer          = answer,
+    rdm_token       = conf_token,
+    redcap_url      = url
+  )
+  if (isTRUE(result$success)) {
+    cat("✅ Saved", conference_type, "attendance for record", record_id,
+        "as instance", result$instance, "\n")
+  } else {
+    cat("❌ Attendance not saved for record", record_id, ":", result$message, "\n")
+  }
+  result
 }
 
 # Function to get the next available instance number for questions instrument

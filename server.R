@@ -362,7 +362,8 @@ server <- function(input, output, session) {
       updateSelectizeInput(session, "q_rotation", choices = c(), selected = character(0))
       updateRadioButtons(session, "q_answer", selected = character(0))
     } else {
-      values$error_message <- "Failed to submit response. Please try again."
+      values$error_message <- if (!is.null(result$message) && nzchar(result$message))
+        result$message else "Failed to submit response. Please try again."
     }
   }
 

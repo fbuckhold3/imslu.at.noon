@@ -286,9 +286,9 @@ get_resident_questions_history <- function(record_id, token, url) {
 #
 # Writes through amiontools::save_attendance_entry() (2026-10-25), the same
 # path ind.dash and resident.digest use. It reads the next instance live and
-# writes nothing if that read fails — get_next_question_instance() below
-# fell back to instance 1 on a failed read, which (writes overwrite) could
-# replace a resident's first entry of the year.
+# writes nothing if that read fails. The writer it replaced fell back to
+# instance 1 on a failed read, which (writes overwrite) could replace a
+# resident's first entry of the year.
 submit_question_response <- function(record_id, conference_type, rotation = NULL, answer = NULL, date = Sys.Date()) {
   result <- amiontools::save_attendance_entry(
     record_id       = record_id,
@@ -306,80 +306,6 @@ submit_question_response <- function(record_id, conference_type, rotation = NULL
     cat("❌ Attendance not saved for record", record_id, ":", result$message, "\n")
   }
   result
-}
-
-# Function to get the next available instance number for questions instrument
-get_next_question_instance <- function(record_id, token, url) {
-  tryCatch({
-    cat("=== GETTING NEXT INSTANCE FOR RECORD ID:", record_id, "===\n")
-    
-    # Query for specific record with only needed fields
-    response <- httr::POST(
-      url = url,
-      body = list(
-        token = token,
-        content = "record",
-        action = "export",
-        format = "json",
-        type = "flat",
-        records = as.character(record_id),
-        fieldNames = "record_id,redcap_repeat_instrument,redcap_repeat_instance",
-        rawOrLabel = "raw",
-        rawOrLabelHeaders = "raw",
-        exportCheckboxLabel = "false",
-        exportSurveyFields = "false",
-        exportDataAccessGroups = "false",
-        returnFormat = "json"
-      ),
-      encode = "form"
-    )
-    
-    cat("REDCap query response status:", httr::status_code(response), "\n")
-    
-    if (httr::status_code(response) == 200) {
-      response_text <- httr::content(response, "text", encoding = "UTF-8")
-      all_data <- jsonlite::fromJSON(response_text)
-      
-      if (is.data.frame(all_data) && nrow(all_data) > 0) {
-        # Filter for questions instrument instances
-        question_records <- all_data[
-          !is.na(all_data$redcap_repeat_instrument) & 
-            all_data$redcap_repeat_instrument == "questions", 
-        ]
-        
-        cat("Question records found:", nrow(question_records), "\n")
-        
-        if (nrow(question_records) > 0) {
-          # Get all instance numbers
-          instances <- as.numeric(question_records$redcap_repeat_instance)
-          instances <- instances[!is.na(instances)]
-          
-          if (length(instances) > 0) {
-            instances <- sort(instances)
-            max_instance <- max(instances)
-            next_instance <- max_instance + 1
-            
-            cat("✅ Found existing instances:", paste(instances, collapse = ", "), "\n")
-            cat("✅ Max instance:", max_instance, "Next instance:", next_instance, "\n")
-            
-            return(next_instance)
-          }
-        }
-      }
-    } else {
-      cat("❌ REDCap query failed with status:", httr::status_code(response), "\n")
-      error_text <- httr::content(response, "text", encoding = "UTF-8")
-      cat("Error details:", error_text, "\n")
-    }
-    
-    # Fallback to instance 1 if no existing instances found
-    cat("⚠️ No existing question instances found, starting with instance 1\n")
-    return(1)
-    
-  }, error = function(e) {
-    cat("❌ Error in get_next_question_instance:", e$message, "\n")
-    return(1)
-  })
 }
 
 # ============================================================================
